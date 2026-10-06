@@ -1,0 +1,164 @@
+﻿@model ReceptionistEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Receptionist";
+}
+
+<div class="container py-4 my-4">
+    <partial name="_alerts" />
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="card-title mb-0 fw-bold">
+                <i class="bi bi-pencil-square me-2"></i>Edit Receptionist Profile
+            </h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <!-- Hidden Inputs -->
+                <input type="hidden" asp-for="ID" />
+                <input type="hidden" asp-for="PhotoURL" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Section 1: Contact & Profile Image Details -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-person me-2"></i>Personal Information</h5>
+                <div class="row g-3 mb-4 align-items-center">
+                    
+                    <!-- Current Photo Preview & Upload Control -->
+                    <div class="col-md-12">
+                        <label asp-for="Photo" class="form-label fw-semibold">Profile Photo</label>
+                        <div class="d-flex align-items-center gap-3">
+                            @if (!string.IsNullOrEmpty(Model.PhotoURL))
+                            {
+                                <img src="@Model.PhotoURL"
+                                     alt="Current Photo"
+                                     class="rounded-circle img-thumbnail object-fit-cover"
+                                     style="width: 60px; height: 60px; min-width: 60px;" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center fw-bold"
+                                     style="width: 60px; height: 60px; min-width: 60px;">
+                                    <i class="bi bi-person-fill fs-3"></i>
+                                </div>
+                            }
+                            <div class="flex-grow-1">
+                                <input asp-for="Photo" type="file" class="form-control" accept="image/*" />
+                                <small class="form-text text-muted">Allowed formats: .png, .jpg, .jpeg (Max 5 MB)</small>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Photo" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <!-- Phone Input -->
+                    <div class="col-md-12">
+                        <label asp-for="Phone" class="form-label fw-semibold"></label>
+                        <input asp-for="Phone" class="form-control" placeholder="01012282233" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Section 2: Work Schedule Details -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-2"></i>Work Schedule</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="WorktimeFrom" class="form-label fw-semibold">Shift Start Time</label>
+                        <input asp-for="WorktimeFrom" type="time" class="form-control" />
+                        <span asp-validation-for="WorktimeFrom" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="WorkTimeTO" class="form-label fw-semibold">Shift End Time</label>
+                        <input asp-for="WorkTimeTO" type="time" class="form-control" />
+                        <span asp-validation-for="WorkTimeTO" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Dayoff" class="form-label fw-semibold">Day Off</label>
+                        <select asp-for="Dayoff" asp-items="Html.GetEnumSelectList<DayOfWeek>()" class="form-select">
+                            <option value="">-- Select Day Off --</option>
+                        </select>
+                        <span asp-validation-for="Dayoff" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Section 3: Password Toggle Section -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-lock me-2"></i>Security Settings</h5>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input asp-for="changePasword" class="form-check-input" type="checkbox" id="changePasswordToggle" />
+                        <label asp-for="changePasword" class="form-check-label fw-semibold cursor-pointer" for="changePasswordToggle">
+                            Change Password
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Password Fields Container (Hidden by default) -->
+                <div class="card bg-light border-0 p-3 mb-4 d-none" id="passwordSection">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="NewPassword" class="form-label fw-semibold">New Password</label>
+                            <input asp-for="NewPassword" class="form-control password-field" disabled placeholder="Min 8 chars, 1 upper, 1 lower, 1 digit, 1 special" />
+                            <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmNewPassword" class="form-label fw-semibold">Confirm New Password</label>
+                            <input asp-for="ConfirmNewPassword" class="form-control password-field" disabled placeholder="Re-enter new password" />
+                            <span asp-validation-for="ConfirmNewPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-action="Details" asp-route-id="@Model.ID" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-circle me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const passwordToggle = document.getElementById("changePasswordToggle");
+            const passwordSection = document.getElementById("passwordSection");
+            const passwordInputs = document.querySelectorAll(".password-field");
+
+            function togglePasswordFields() {
+                if (passwordToggle && passwordToggle.checked) {
+                    passwordSection.classList.remove("d-none");
+                    passwordInputs.forEach(input => input.removeAttribute("disabled"));
+                } else if (passwordSection) {
+                    passwordSection.classList.add("d-none");
+                    passwordInputs.forEach(input => {
+                        input.setAttribute("disabled", "disabled");
+                        input.value = "";
+                    });
+                }
+            }
+
+            if (passwordToggle) {
+                passwordToggle.addEventListener("change", togglePasswordFields);
+            }
+
+            // Sync initial state on load (e.g., if re-rendered after a model validation failure)
+            togglePasswordFields();
+        });
+    </script>
+}

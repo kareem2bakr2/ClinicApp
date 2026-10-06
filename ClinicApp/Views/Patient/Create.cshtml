@@ -1,0 +1,281 @@
+﻿@model PatientCreateViewModel
+
+@{
+    ViewData["Title"] = "Add Patient";
+}
+
+<div class="container py-4">
+
+    <!-- Header & Back Navigation -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Add New Patient</h2>
+            <p class="text-muted mb-0">Fill in the medical and personal details to register a patient.</p>
+        </div>
+
+        <a asp-controller="Patient" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Patients
+        </a>
+    </div>
+
+    <form asp-controller="Patient" asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+
+            <!-- Left Column: Primary & Medical Information -->
+            <div class="col-lg-8">
+
+                <!-- Personal Details Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-primary">
+                            <i class="bi bi-person me-2"></i>Personal Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <div class="row g-3">
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-semibold">Full Name *</label>
+                                <input asp-for="Name" class="form-control" placeholder="e.g. John Doe" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="col-md-3">
+                                <label asp-for="Gender" class="form-label fw-semibold">Gender *</label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">Select...</option>
+                                    <option value="@Gender.Male">Male</option>
+                                    <option value="@Gender.Female">Female</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Date of Birth -->
+                            <div class="col-md-3">
+                                <label asp-for="DOB" class="form-label fw-semibold">Date of Birth *</label>
+                                <input asp-for="DOB" type="date" class="form-control" />
+                                <span asp-validation-for="DOB" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                <label asp-for="Phone" class="form-label fw-semibold">Phone Number *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
+                                    <input asp-for="Phone" class="form-control" placeholder="0102-555-0199" />
+                                </div>
+                                <span asp-validation-for="Phone" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Email Address -->
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-semibold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="patient@example.com" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Home Address -->
+                            <div class="col-12">
+                                <label asp-for="Address" class="form-label fw-semibold">Home Address</label>
+                                <textarea asp-for="Address" class="form-control" rows="2" placeholder="Street address, City, Zip Code"></textarea>
+                                <span asp-validation-for="Address" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                
+                <!-- Account Credentials Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-warning">
+                            <i class="bi bi-key me-2 text-warning"></i> Account Credentials
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Password Field -->
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label fw-semibold">Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
+                                    <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Confirm Password Field -->
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label fw-semibold">Confirm Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-shield-lock"></i></span>
+                                    <input asp-for="ConfirmPassword" class="form-control" placeholder="••••••••" />
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- Emergency Contact Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-danger">
+                            <i class="bi bi-shield-exclamation me-2"></i>Emergency Contact
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Contact Name -->
+                            <div class="col-md-5">
+                                <label asp-for="EmergencyContact" class="form-label fw-semibold">Contact Name *</label>
+                                <input asp-for="EmergencyContact" class="form-control" placeholder="e.g. Mary Doe" />
+                                <span asp-validation-for="EmergencyContact" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Relationship -->
+                            <div class="col-md-3">
+                                <label asp-for="EmergencyRelationShip" class="form-label fw-semibold">Relationship *</label>
+                                <input asp-for="EmergencyRelationShip" class="form-control" placeholder="e.g. Spouse" />
+                                <span asp-validation-for="EmergencyRelationShip" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Emergency Phone -->
+                            <div class="col-md-4">
+                                <label asp-for="EmergencyPhone" class="form-label fw-semibold">Emergency Phone *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-telephone-outbound"></i></span>
+                                    <input asp-for="EmergencyPhone" class="form-control" placeholder="+1 555-9900" />
+                                </div>
+                                <span asp-validation-for="EmergencyPhone" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Settings & Submit Panel -->
+            <div class="col-lg-4">
+
+                <div class="card shadow-sm border-0 mb-4 sticky-lg-top" style="top: 20px; z-index: 10;">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-secondary">
+                            <i class="bi bi-gear me-2"></i>System Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Require Password Change Checkbox -->
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="RequirePasswordChange" class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                            <label class="form-check-label fw-semibold" for="flexSwitchCheckDefault">
+                                Require Password Change
+                            </label>
+                            <div class="form-text">User will be prompted to reset password on first login.</div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle me-1"></i> Save Patient
+                            </button>
+                            <a asp-controller="Patient" asp-action="Index" class="btn btn-light text-muted">
+                                Cancel
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </form>
+    <!-- Credentials Success Modal -->
+    <div class="modal fade" id="credentialsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="credentialsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold" id="credentialsModalLabel">
+                        <i class="bi bi-check-circle me-2"></i>Patient Created Successfully
+                    </h5>
+                </div>
+
+                <div class="modal-body p-4 text-center">
+                    <p class="text-muted mb-3">Please save these login credentials for the patient:</p>
+
+                    <!-- Username Box -->
+                    <div class="bg-light p-3 rounded mb-3 text-start border">
+                        <small class="text-muted d-block fw-semibold">Username</small>
+                        <span id="modalUsername" class="fw-bold fs-5 text-dark">@TempData["NewUsername"]</span>
+                    </div>
+
+                    <!-- Password Box -->
+                    <div class="bg-light p-3 rounded text-start border">
+                        <small class="text-muted d-block fw-semibold">Password</small>
+                        <span id="modalPassword" class="fw-bold fs-5 text-primary">@TempData["NewPassword"]</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light justify-content-between">
+                    <!-- Button 1: Close Modal & Add Another Patient -->
+                    <a asp-controller="Patient"
+                       asp-action="Create"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-person-plus me-1"></i> Add Another Patient
+                    </a>
+
+                    <!-- Button 2: Return to Patient List Index -->
+                    <a asp-controller="Patient" asp-action="Index" class="btn btn-primary">
+                        <i class="bi bi-house me-1"></i> Return to Index
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Safely read TempData values into JS variables
+            const newUsername = @Json.Serialize(TempData["NewUsername"]);
+            const newPassword = @Json.Serialize(TempData["NewPassword"]);
+
+            if (newUsername && newPassword) {
+                // Populate modal text elements
+                const userEl = document.getElementById("modalUsername");
+                const passEl = document.getElementById("modalPassword");
+
+                if (userEl) userEl.textContent = newUsername;
+                if (passEl) passEl.textContent = newPassword;
+
+                // Show Bootstrap Modal
+                const modalElement = document.getElementById("credentialsModal");
+                if (modalElement) {
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,149 @@
+﻿@model EquipmentViewModel
+
+@{
+    ViewData["Title"] = "Add New Equipment";
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="bi bi-tools me-2"></i>Add New Equipment
+                    </h5>
+                    <a asp-action="Index" class="btn btn-sm btn-light">
+                        <i class="bi bi-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" id="createEquipmentForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- 1. Equipment Details -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-semibold"></label>
+                                <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. Resistance Band Set" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MerchantName" class="form-label fw-semibold"></label>
+                                <input asp-for="MerchantName" class="form-control form-control-sm" placeholder="e.g. Medical Supplies Ltd." />
+                                <span asp-validation-for="MerchantName" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="price" class="form-label fw-semibold"></label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="price" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                </div>
+                                <span asp-validation-for="price" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- 2. Multi-Select Exercises with Search -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold mb-0">Select Target Exercises</label>
+                                <span class="badge bg-primary rounded-pill" id="selectedCountBadge">0 Selected</span>
+                            </div>
+
+                            <input type="text" id="exerciseSearchInput" class="form-control form-control-sm mb-2" placeholder="Search exercise by name, category, or difficulty..." />
+
+                            <div class="border rounded bg-white p-2" style="max-height: 250px; overflow-y: auto;" id="exerciseListContainer">
+                                @if (Model.excersices != null && Model.excersices.Any())
+                                {
+                                    <div class="list-group list-group-flush">
+                                        @foreach (var exercise in Model.excersices)
+                                        {
+                                            bool isChecked = Model.excersices != null && Model.SelectedExercises.Contains(exercise.ID);
+
+                                            <label class="list-group-item list-group-item-action exercise-item py-2 px-3 border-0 rounded mb-1 cursor-pointer">
+                                                <div class="form-check d-flex align-items-center gap-2 mb-0">
+                                                    <input class="form-check-input exercise-checkbox me-2"
+                                                           type="checkbox"
+                                                           name="SelectedExercises"
+                                                           value="@exercise.ID"
+                                                    @(isChecked ? "checked" : "") />
+
+                                                    <div class="w-100">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="fw-semibold small text-dark exercise-name">@exercise.Name</span>
+                                                            <span class="badge bg-info text-dark extra-small exercise-category">@exercise.CategoryName</span>
+                                                        </div>
+                                                        <small class="text-muted d-block extra-small text-truncate" style="max-width: 450px;">
+                                                            @exercise.Description
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center py-3 text-muted small">No exercises available.</div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Index" class="btn btn-sm btn-outline-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-sm btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i> Save Equipment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkboxes = document.querySelectorAll(".exercise-checkbox");
+            const countBadge = document.getElementById("selectedCountBadge");
+            const searchInput = document.getElementById("exerciseSearchInput");
+            const exerciseItems = document.querySelectorAll(".exercise-item");
+
+            // 1. Update Selected Count Badge
+            function updateSelectedCount() {
+                const checkedCount = document.querySelectorAll(".exercise-checkbox:checked").length;
+                if (countBadge) {
+                    countBadge.textContent = `${checkedCount} Selected`;
+                }
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", updateSelectedCount);
+            });
+
+            // Initial count calculation
+            updateSelectedCount();
+
+            // 2. Live Search Filtering
+            if (searchInput) {
+                searchInput.addEventListener("input", function() {
+                    const term = this.value.toLowerCase().trim();
+                    exerciseItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        item.style.display = text.includes(term) ? "" : "none";
+                    });
+                });
+            }
+        });
+    </script>
+}

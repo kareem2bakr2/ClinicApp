@@ -1,0 +1,684 @@
+﻿@model ClinicApp.ViewModel.AppointmentDetailsViewModel
+@using ClinicApp.ViewModel
+@using ClinicApp.Models
+
+@{
+    ViewData["Title"] = $"Appointment Details";
+}
+
+ <div class="container py-4 my-5">
+    <partial name="_alerts" />
+
+    <!-- Top Navigation & Action Buttons -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Directory
+                </a>
+            </div>
+            @if(!User.IsInRole(ApplicationRole.Patient))
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    <!-- Action: Schedule Button (Only visible when Status is Pending) -->
+                    @if (Model.Status == AppointmentStatus.pending)
+                    {
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#scheduleSetupCollapse" aria-expanded="false" aria-controls="scheduleSetupCollapse">
+                            <i class="bi bi-calendar-event me-1"></i> Schedule
+                        </button>
+                    }
+
+                    <!-- Action: Edit Notes & Dates (Modal Trigger) -->
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAppointmentModal">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Notes & Dates
+                    </button>
+
+                    <!-- Action: Pay Button (Toggles Payment Form Div if PayablefeesOnpatient > 0) -->
+                    @if (Model.PayablefeesOnpatient.HasValue && Model.PayablefeesOnpatient > 0)
+                    {
+                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="collapse" data-bs-target="#paySetupCollapse" aria-expanded="false" aria-controls="paySetupCollapse">
+                            <i class="bi bi-credit-card me-1"></i> Pay Fee ($@Model.PayablefeesOnpatient?.ToString("0.00"))
+                        </button>
+                    }
+
+                    <!-- Action: Cancel (POST form with confirmation) -->
+                    @if (Model.CancelBtnEnable)
+                    {
+                        <form asp-action="Cancel" asp-route-id="@Model.ID" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle me-1"></i> Cancel Appointment
+                            </button>
+                        </form>
+                    }
+                </div>
+
+            }
+        </div>
+    </div>
+
+    <!-- Toggleable Payment Form Div (Triggered via Pay Button) -->
+    @if (Model.PayablefeesOnpatient.HasValue && Model.PayablefeesOnpatient > 0)
+    {
+        <div class="collapse mb-4" id="paySetupCollapse">
+            <div class="card shadow-sm border-0 border-start border-4 border-success">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-cash-coin me-2"></i>Process Appointment Payment
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-controller="Appointment" asp-action="Pay" asp-route-id="@Model.ID" method="post">
+                        <div class="row g-3">
+
+                            <!-- Payment Amount -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Payment Amount ($)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" name="Amount" class="form-control" value="@Model.PayablefeesOnpatient" required />
+                                </div>
+                                <span class="text-muted extra-small">Remaining Fee: $@Model.PayablefeesOnpatient?.ToString("0.00")</span>
+                            </div>
+
+                            <!-- Payment Method Enum Dropdown -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Payment Method</label>
+                                <select name="method" class="form-select form-select-sm" required>
+                                    @foreach (PaymentMethod method in Enum.GetValues(typeof(PaymentMethod)))
+                                    {
+                                        <option value="@method">@method</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Payment Notes -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Notes / Receipt Ref</label>
+                                <input type="text" name="notes" class="form-control form-control-sm" placeholder="e.g. Paid via Visa terminal..." />
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#paySetupCollapse">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-success px-4">
+                                <i class="bi bi-check-circle me-1"></i> Submit Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Toggleable Schedule & Complete Setup Form (Triggered via Schedule Button) -->
+    @if (Model.Status == AppointmentStatus.pending)
+    {
+        <div class="collapse mb-4" id="scheduleSetupCollapse">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="bi bi-calendar-plus me-2"></i>Schedule Appointment Setup
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="CompleteAppointment" asp-route-id="@Model.ID" method="post">
+
+                        <!-- Hidden input storing selected therapist ID -->
+                        <input type="hidden" name="therapistId" id="selectedTherapistIdInput" required />
+
+                        <div class="row g-4">
+                            <!-- Left Sub-Div: Scrollable Therapist Picker -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">1. Select Therapist</label>
+                                <input type="text" id="therapistSearchInput" class="form-control form-control-sm mb-2" placeholder="Search therapist by name or phone..." />
+
+                                <div class="border rounded bg-white p-2" style="max-height: 200px; overflow-y: auto;" id="therapistListContainer">
+                                    @if (Model.allTherapists != null && Model.allTherapists.Any())
+                                    {
+                                        <div class="list-group list-group-flush">
+                                            @foreach (var therapist in Model.allTherapists)
+                                            {
+                                                <button type="button"
+                                                        class="list-group-item list-group-item-action therapist-item py-2 px-3 border-0 rounded mb-1"
+                                                        data-id="@therapist.id"
+                                                        data-name="@therapist.Name"
+                                                        data-phone="@therapist.phone">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="fw-semibold small">@therapist.Name</span>
+                                                        <span class="badge bg-light text-dark border">ID: #@therapist.id</span>
+                                                    </div>
+                                                    <small class="text-muted d-block"><i class="bi bi-telephone me-1"></i>@therapist.phone</small>
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-3 text-muted small">No therapists available.</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Right Sub-Div: Selected Therapist Data Table & Pricing -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">2. Selected Therapist Details</label>
+                                <div class="card border bg-light mb-3">
+                                    <div class="card-body p-3">
+                                        <table class="table table-sm table-borderless mb-0 align-middle" id="selectedTherapistTable">
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-muted small" style="width: 40%;">Therapist ID:</td>
+                                                    <td class="fw-bold small" id="tTableId"><span class="text-muted italic">None selected</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-muted small">Name:</td>
+                                                    <td class="fw-bold small" id="tTableName">—</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-muted small">Phone Contact:</td>
+                                                    <td class="fw-bold small" id="tTablePhone">—</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Provider Percentage (%)</label>
+                                        <input type="number" step="0.01" name="MedicalProviderPercentage" class="form-control form-control-sm" placeholder="e.g. 15.50" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Start Date</label>
+                                        <input type="date" name="StartDate" class="form-control form-control-sm" required />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Session Schedules -->
+                            <div class="col-12 mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Day & Time Session Schedules</h6>
+                                    <button type="button" id="addSessionBtn" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-plus-lg"></i> Add Day Schedule
+                                    </button>
+                                </div>
+
+                                <div id="sessionSchedulesContainer">
+                                    <!-- Initial Schedule Row -->
+                                    <div class="row g-2 align-items-center session-schedule-row mb-2">
+                                        <div class="col-md-4">
+                                            <select name="DayTimeSessions[0].Day" class="form-select form-select-sm">
+                                                @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                                                {
+                                                    <option value="@day">@day</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" name="DayTimeSessions[0].StartTime" class="form-control form-control-sm" required />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" name="DayTimeSessions[0].EndTime" class="form-control form-control-sm" required />
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-session-row">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#scheduleSetupCollapse">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-success px-4">
+                                <i class="bi bi-check-lg me-1"></i> Confirm Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+
+        <!-- Left Column: Core Overview & Sessions -->
+        <div class="col-lg-8">
+
+            <!-- Overview & Status -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-journal-medical me-2"></i>Appointment Overview
+                    </h5>
+                    <span class="badge bg-info text-dark px-3 py-2 fs-6">
+                        @Model.Status
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small">Medical Service</span>
+                            <span class="fw-bold fs-5 text-dark">
+                                @(string.IsNullOrEmpty(Model.MedicalServiceName) ? "N/A" : Model.MedicalServiceName)
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small">Treatment Plan</span>
+                            @if (Model.planID.HasValue)
+                            {
+                                if (User.IsInRole(ApplicationRole.Patient))
+                                {
+                                    <span class="fw-bold fs-5 text-dark">
+                                        <i class="bi bi-diagram-3 me-1"></i>
+                                        @(string.IsNullOrEmpty(Model.PlanName) ? $"Plan #{Model.planID}" : Model.PlanName)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Plan" asp-action="Details" asp-route-id="@Model.planID" class="fw-bold fs-5 text-primary text-decoration-none">
+                                        <i class="bi bi-diagram-3 me-1"></i>
+                                        @(string.IsNullOrEmpty(Model.PlanName) ? $"Plan #{Model.planID}" : Model.PlanName)
+                                    </a>
+                                }
+                                
+                            }
+                            else
+                            {
+                                <span class="fw-semibold text-dark fs-5">
+                                    @(string.IsNullOrEmpty(Model.PlanName) ? "None Assigned" : Model.PlanName)
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Timings -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-clock-history me-2"></i>Schedule & Timing
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">Creation Date</span>
+                                <span class="fw-semibold text-dark">@Model.CreationDate.ToString("MMM dd, yyyy hh:mm tt")</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">Start Date</span>
+                                <span class="fw-semibold text-dark">
+                                    <i class="bi bi-calendar-check me-1 text-success"></i>
+                                    @(Model.StartDate?.ToString("MMM dd, yyyy") ?? "Not Scheduled")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">End Date</span>
+                                <span class="fw-semibold text-dark">
+                                    <i class="bi bi-calendar-x me-1 text-danger"></i>
+                                    @(Model.EndDate?.ToString("MMM dd, yyyy") ?? "Not Scheduled")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Section -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-card-text me-2"></i>Notes
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                    {
+                        <p class="mb-0 text-dark" style="white-space: pre-line;">@Model.Notes</p>
+                    }
+                    else
+                    {
+                        <span class="text-muted italic">No extra notes recorded for this appointment.</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Therapy Sessions Table -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-activity me-2"></i>Therapy Sessions
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.TherapySessions != null && Model.TherapySessions.Any())
+                            {
+                                foreach (var session in Model.TherapySessions)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="TherapySession" asp-action="Details" asp-route-id="@session.ID" class="fw-bold text-primary text-decoration-none">
+                                                #@session.ID
+                                            </a>
+                                        </td>
+                                        <td>@session.SessionDate.ToString("MMM dd, yyyy")</td>
+                                        <td>@session.StartTime.ToString("hh:mm tt") - @session.EndTime.ToString("hh:mm tt")</td>
+                                        <td><span class="badge bg-secondary">@session.SessionStatus</span></td>
+                                        <td>@(string.IsNullOrEmpty(session.Notes) ? "—" : session.Notes)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">No therapy sessions scheduled yet.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Participants & Financial Breakdown -->
+        <div class="col-lg-4">
+
+            <!-- People Involved -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-people me-2"></i>Participants
+                    </h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <!-- Patient Link -->
+                    <li class="list-group-item p-3">
+                        <span class="text-muted d-block small">Patient Name</span>
+                        @if (Model.PatientID.HasValue)
+                        {
+                            <a asp-controller="Patient" asp-action="Details" asp-route-id="@Model.PatientID" class="fw-bold text-primary text-decoration-none fs-6">
+                                <i class="bi bi-person-fill me-1"></i>
+                                @(string.IsNullOrEmpty(Model.PatientName) ? $"Patient #{Model.PatientID}" : Model.PatientName)
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="fw-semibold text-dark">
+                                @(string.IsNullOrEmpty(Model.PatientName) ? "Unassigned" : Model.PatientName)
+                            </span>
+                        }
+                    </li>
+
+                    <!-- Therapist -->
+                    <li class="list-group-item p-3">
+                        <span class="text-muted d-block small">Therapist</span>
+                        <span class="fw-semibold text-dark fs-6">
+                            <i class="bi bi-person-badge me-1 text-secondary"></i>
+                            @(string.IsNullOrEmpty(Model.TherapistName) ? "Unassigned" : Model.TherapistName)
+                        </span>
+                    </li>
+
+                    <!-- Therapist Manager -->
+                    <li class="list-group-item p-3">
+                        <span class="text-muted d-block small">Therapist Manager</span>
+                        <span class="fw-semibold text-dark fs-6">
+                            <i class="bi bi-person-check me-1 text-secondary"></i>
+                            @(string.IsNullOrEmpty(Model.TherapistManagerName) ? "None" : Model.TherapistManagerName)
+                        </span>
+                    </li>
+
+                    <!-- Receptionist -->
+                    <li class="list-group-item p-3">
+                        <span class="text-muted d-block small">Reserved By (Receptionist)</span>
+                        <span class="fw-semibold text-dark fs-6">
+                            <i class="bi bi-headset me-1 text-secondary"></i>
+                            @(string.IsNullOrEmpty(Model.ReceptName) ? "System / Unknown" : Model.ReceptName)
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-cash-stack me-2"></i>Financial Breakdown
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Discount Fixed:</span>
+                        <span class="fw-semibold text-dark">$@(Model.Discount?.ToString("0.00") ?? "0.00")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Discount Percentage:</span>
+                        <span class="fw-semibold text-dark">@(Model.DiscountPercentage?.ToString("0.00") ?? "0.00")%</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Medical Provider Fees:</span>
+                        <span class="fw-semibold text-dark">$@(Model.feesOnMedicalService?.ToString("0.00") ?? "0.00")</span>
+                    </div>
+
+                    <hr />
+
+                    <!-- Total Patient Fees -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold text-dark">Patient Fees:</span>
+                        <span class="fw-bold text-dark fs-5">$@(Model.feesOnpatient?.ToString("0.00") ?? "0.00")</span>
+                    </div>
+
+                    <!-- Required Fees to Pay -->
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="fw-bold text-dark">Required Fees to Pay:</span>
+                        <span class="fw-bold text-danger fs-4">$@(Model.PayablefeesOnpatient?.ToString("0.00") ?? "0.00")</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Payments Section -->
+    <div class="card shadow-sm border-0 mt-2">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-secondary">
+                <i class="bi bi-credit-card-2-front me-2"></i>Payment History
+            </h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Paid By</th>
+                        <th>Type</th>
+                        <th>Receptionist</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Payments != null && Model.Payments.Any())
+                    {
+                        foreach (var pay in Model.Payments)
+                        {
+                            <tr>
+                                <td class="fw-bold">#@pay.ID</td>
+                                <td>@pay.Date.ToString("MMM dd, yyyy hh:mm tt")</td>
+                                <td class="fw-bold text-success">$@(pay.Amount?.ToString("0.00") ?? "0.00")</td>
+                                <td><span class="badge bg-light text-dark border">@pay.Method</span></td>
+                                <td>@pay.PayedBy</td>
+                                <td>
+                                    @if (pay.IsCredit)
+                                    {
+                                        <span class="badge bg-success">Credit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Debit</span>
+                                    }
+                                </td>
+                                <td>@(string.IsNullOrEmpty(pay.ReceptName) ? "—" : pay.ReceptName)</td>
+                                <td>@(string.IsNullOrEmpty(pay.Notes) ? "—" : pay.Notes)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-3 text-muted">No transaction or payment records found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Notes and Dates -->
+<div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="EditNotesAndDates" asp-route-id="@Model.ID" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editAppointmentModalLabel">Edit Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Start Date</label>
+                        <input type="date" name="StartDate" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">End Date</label>
+                        <input type="date" name="EndDate" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <textarea name="Notes" class="form-control" rows="4">@Model.Notes</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Interactive Therapist Sub-Div Selection Logic
+            const therapistItems = document.querySelectorAll(".therapist-item");
+            const therapistSearchInput = document.getElementById("therapistSearchInput");
+            const hiddenInput = document.getElementById("selectedTherapistIdInput");
+
+            const tTableId = document.getElementById("tTableId");
+            const tTableName = document.getElementById("tTableName");
+            const tTablePhone = document.getElementById("tTablePhone");
+
+            therapistItems.forEach(item => {
+                item.addEventListener("click", function() {
+                    therapistItems.forEach(i => i.classList.remove("active", "bg-primary", "text-white"));
+                    this.classList.add("active", "bg-primary", "text-white");
+
+                    const id = this.getAttribute("data-id");
+                    const name = this.getAttribute("data-name");
+                    const phone = this.getAttribute("data-phone");
+
+                    if (hiddenInput) hiddenInput.value = id;
+                    if (tTableId) tTableId.textContent = "#" + id;
+                    if (tTableName) tTableName.textContent = name;
+                    if (tTablePhone) tTablePhone.textContent = phone;
+                });
+            });
+
+            if (therapistSearchInput) {
+                therapistSearchInput.addEventListener("input", function() {
+                    const term = this.value.toLowerCase().trim();
+                    therapistItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        item.style.display = text.includes(term) ? "" : "none";
+                    });
+                });
+            }
+
+            // 2. Dynamic Schedule Day/Time Rows
+            const container = document.getElementById("sessionSchedulesContainer");
+            const addBtn = document.getElementById("addSessionBtn");
+            let rowIndex = 1;
+
+            if (addBtn && container) {
+                addBtn.addEventListener("click", function() {
+                    const row = document.createElement("div");
+                    row.className = "row g-2 align-items-center session-schedule-row mb-2";
+                    row.innerHTML = `
+                                <div class="col-md-4">
+                                    <select name="DayTimeSessions[${rowIndex}].Day" class="form-select form-select-sm">
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                        <option value="Friday">Friday</option>
+                                        <option value="Saturday">Saturday</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="time" name="DayTimeSessions[${rowIndex}].StartTime" class="form-control form-control-sm" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="time" name="DayTimeSessions[${rowIndex}].EndTime" class="form-control form-control-sm" required />
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-session-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                    container.appendChild(row);
+                    rowIndex++;
+                });
+
+                container.addEventListener("click", function(e) {
+                    if (e.target.closest(".remove-session-row")) {
+                        const rows = container.querySelectorAll(".session-schedule-row");
+                        if (rows.length > 1) {
+                            e.target.closest(".session-schedule-row").remove();
+                        } else {
+                            alert("At least one session schedule row is required.");
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

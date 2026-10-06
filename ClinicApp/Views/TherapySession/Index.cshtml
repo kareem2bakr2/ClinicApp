@@ -1,0 +1,313 @@
+﻿@using ClinicApp.ViewModel
+@model TherapySessionIndexModelView
+
+@{
+    ViewData["Title"] = "Therapy Sessions Directory";
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <div class="card shadow-sm border-0">
+        <!-- Header (Add Button Removed) -->
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-secondary">
+                <i class="bi bi-calendar2-week me-2"></i>Therapy Sessions Directory
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- Filtering Form -->
+            <form asp-action="Index" method="get" class="mb-4" id="sessionFilterForm">
+                <input type="hidden" name="PageNumber" value="1" />
+
+                <!-- 1. Treatment Plan Selection Grid (Single-Select Radio Tiles) -->
+                <div class="mb-4">
+                    <label class="form-label small text-muted fw-bold d-block mb-2">Filter by Treatment Plan (Select One)</label>
+                    <div class="d-flex flex-wrap gap-2" id="planSelectGrid">
+                        <!-- 'All Plans' default option -->
+                        <input type="radio" class="btn-check" name="TreatmentPlanNameFilter" id="plan_all" value=""
+                        @(string.IsNullOrEmpty(Model.TreatmentPlanNameFilter) ? "checked" : "") />
+                        <label class="btn btn-sm btn-outline-secondary px-3 rounded-pill" for="plan_all">All Plans</label>
+
+                        @if (Model.AllTreatmentPlanNames != null && Model.AllTreatmentPlanNames.Any())
+                        {
+                            int planIdx = 0;
+                            foreach (var planName in Model.AllTreatmentPlanNames)
+                            {
+                                string radioId = $"plan_{planIdx++}";
+                                bool isChecked = Model.TreatmentPlanNameFilter == planName;
+
+                                <input type="radio" class="btn-check" name="TreatmentPlanNameFilter" id="@radioId" value="@planName"
+                                @(isChecked ? "checked" : "") />
+                                <label class="btn btn-sm btn-outline-primary px-3 rounded-pill" for="@radioId">@planName</label>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <!-- 2. Search Text Input -->
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted fw-semibold">Search Query</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" name="SearchName" value="@Model.SearchName" class="form-control" placeholder="Search notes..." />
+                        </div>
+                    </div>
+
+                    <!-- 3. Date & Time Filters -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted fw-semibold">Session Date</label>
+                        <input type="date" name="SessionDateFilter"
+                               value="@(Model.SessionDateFilter != DateOnly.MinValue ? Model.SessionDateFilter.ToString("yyyy-MM-dd") : "")"
+                               class="form-control form-control-sm" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted fw-semibold">Start Time From</label>
+                        <input type="time" name="StartTimeFilter"
+                               value="@(Model.StartTimeFilter != TimeOnly.MinValue ? Model.StartTimeFilter.ToString("HH:mm") : "")"
+                               class="form-control form-control-sm" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted fw-semibold">End Time To</label>
+                        <input type="time" name="EndTimeFilter"
+                               value="@(Model.EndTimeFilter != TimeOnly.MinValue ? Model.EndTimeFilter.ToString("HH:mm") : "")"
+                               class="form-control form-control-sm" />
+                    </div>
+
+                    <!-- 4. Session Status Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted fw-semibold">Status</label>
+                        <select asp-for="SessionStatusFilter"
+                                asp-items="Html.GetEnumSelectList<SessionStatus>()"
+                                name="SessionStatusFilter"
+                                class="form-select form-select-sm">
+                            <option value="">-- All Statuses --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 5. Therapist Multi-Select Checkbox List with Live Search (Vertical List) -->
+                @if (User.IsInRole(ApplicationRole.AdminReceptionist))
+                    {
+                <div class="mb-4">
+                    <label class="form-label small text-muted fw-semibold d-block mb-1">Filter by Therapists</label>
+
+                    <!-- Search bar for therapist names -->
+                    <input type="text" id="therapistSearchInput" class="form-control form-control-sm mb-2" placeholder="Search therapist by name..." />
+
+                    <!-- Vertical scrollable container (no horizontal scrolling) -->
+                    <div class="border rounded bg-white p-2" style="max-height: 160px; overflow-y: auto;" id="therapistListContainer">
+                        @if (Model.AllTherapistNAmes != null && Model.AllTherapistNAmes.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var therapist in Model.AllTherapistNAmes)
+                                {
+                                    bool isChecked = Model.TherapistNameFilter != null && Model.TherapistNameFilter.Contains(therapist.id);
+
+                                    <label class="list-group-item list-group-item-action therapist-item py-2 px-3 border-0 rounded mb-1 cursor-pointer">
+                                        <div class="form-check d-flex align-items-center mb-0">
+                                            <input class="form-check-input me-2 therapist-checkbox"
+                                                   type="checkbox"
+                                                   name="TherapistNameFilter"
+                                                   value="@therapist.id"
+                                                   id="therapist_@therapist.id"
+                                            @(isChecked ? "checked" : "") />
+                                            <span class="small fw-semibold text-dark therapist-name">@therapist.name</span>
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted small py-2 text-center">No therapists available.</div>
+                        }
+                    </div>
+                </div>
+
+                }
+                <!-- Filter Actions -->
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary px-3">Reset Filters</a>
+                    <button type="submit" class="btn btn-sm btn-primary px-4">
+                        <i class="bi bi-funnel me-1"></i> Apply Filters
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- Sessions Data Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Date & Time</th>
+                            <th>Treatment Plan</th>
+                            <th>Therapist</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.items != null && Model.items.Any())
+                        {
+                            foreach (var item in Model.items)
+                            {
+                                <tr>
+                                    <td class="fw-bold">#@item.ID</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark"><i class="bi bi-calendar3 me-1 text-primary"></i>@item.SessionDate.ToString("dd MMM yyyy")</div>
+                                        <small class="text-muted"><i class="bi bi-clock me-1"></i>@item.StartTime.ToString("hh:mm tt") - @item.EndTime.ToString("hh:mm tt")</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            @(string.IsNullOrEmpty(item.TreatmentPlanName) ? "Unassigned" : item.TreatmentPlanName)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark small">
+                                            <i class="bi bi-person-badge me-1 text-secondary"></i>
+                                            @(string.IsNullOrEmpty(item.TheeapistName) ? "Unassigned" : item.TheeapistName)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@item.SessionStatus</span>
+                                    </td>
+                                    <td class="small text-muted" style="max-width: 200px;">
+                                        @(string.IsNullOrEmpty(item.Notes) ? "—" : item.Notes)
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.ID" class="btn btn-outline-info" title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.ID" class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <!-- Cancel Action Triggers Modal -->
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#cancelConfirmModal"
+                                                    data-id="@item.ID"
+                                                    title="Cancel Session">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> No therapy sessions found matching your filter criteria.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.countPages > 1)
+            {
+                <nav class="mt-4">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-PageNumber="@(Model.PageNumber - 1)"
+                               asp-route-SearchName="@Model.SearchName"
+                               asp-route-TreatmentPlanNameFilter="@Model.TreatmentPlanNameFilter"
+                               asp-route-SessionStatusFilter="@Model.SessionStatusFilter">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= Model.countPages; i++)
+                        {
+                            <li class="page-item @(Model.PageNumber == i ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@i"
+                                   asp-route-SearchName="@Model.SearchName"
+                                   asp-route-TreatmentPlanNameFilter="@Model.TreatmentPlanNameFilter"
+                                   asp-route-SessionStatusFilter="@Model.SessionStatusFilter">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.countPages ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-PageNumber="@(Model.PageNumber + 1)"
+                               asp-route-SearchName="@Model.SearchName"
+                               asp-route-TreatmentPlanNameFilter="@Model.TreatmentPlanNameFilter"
+                               asp-route-SessionStatusFilter="@Model.SessionStatusFilter">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cancel Session Confirmation -->
+<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Cancel" method="post">
+                <input type="hidden" id="cancelSessionId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="cancelConfirmModalLabel">Confirm Session Cancellation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">Are you sure you want to cancel session <strong id="cancelSessionDisplay"></strong>?</p>
+                    <span class="text-muted small">This action will change the status of the session to Cancelled.</span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-sm btn-danger px-4">Confirm Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Cancel Modal logic
+            const cancelModal = document.getElementById('cancelConfirmModal');
+            if (cancelModal) {
+                cancelModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const id = button.getAttribute('data-id');
+
+                    document.getElementById('cancelSessionId').value = id;
+                    document.getElementById('cancelSessionDisplay').textContent = `#${id}`;
+                });
+            }
+
+            // Therapist Search Filter logic
+            const therapistSearchInput = document.getElementById("therapistSearchInput");
+            const therapistItems = document.querySelectorAll(".therapist-item");
+
+            if (therapistSearchInput) {
+                therapistSearchInput.addEventListener("input", function() {
+                    const term = this.value.toLowerCase().trim();
+                    therapistItems.forEach(item => {
+                        const name = item.querySelector(".therapist-name").textContent.toLowerCase();
+                        item.style.display = name.includes(term) ? "" : "none";
+                    });
+                });
+            }
+        });
+    </script>
+}

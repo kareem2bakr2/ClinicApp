@@ -1,0 +1,272 @@
+﻿@model List<TherapistAddToMyTeamModelView>
+
+@{
+    ViewData["Title"] = "Add Therapists to Team";
+    var selectedIds = ViewBag.ids as List<int> ?? new List<int>();
+}
+
+<div class="container py-4 my-5">
+    <partial name="_alerts" />
+
+    <!-- Form starts here: Wraps the entire list and submits selected IDs -->
+    <form asp-controller="Therapist" asp-action="AddToTeam" method="post" id="addToTeamForm">
+        @Html.AntiForgeryToken()
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Build Your Team</h2>
+                <p class="text-muted mb-0">Select therapists from the list below to assign them under your management.</p>
+            </div>
+
+            <!-- Header Submit Button -->
+            <div>
+                <a asp-controller="Therapist" asp-action="Index" class="btn btn-outline-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="bi bi-person-plus-fill me-1"></i> Add Selected (<span id="selectedCountHeader">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Search & Global Selection Bar -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    
+                    <!-- Live Search Input -->
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text"
+                                   id="therapistSearch"
+                                   class="form-control border-start-0 ps-0"
+                                   placeholder="Search by name, specialization, or email..." />
+                        </div>
+                    </div>
+
+                    <!-- Select All Toggle -->
+                    <div class="col-md-4 text-md-end">
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="checkbox" id="selectAllCheckbox" />
+                            <label class="form-check-label fw-semibold" for="selectAllCheckbox">
+                                Select All Visible
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Therapist Card Grid -->
+        @if (Model != null && Model.Any())
+        {
+            <div class="row g-3" id="therapistsGrid">
+                @foreach (var therapist in Model)
+                {
+                    <div class="col-md-6 col-lg-4 therapist-card-wrapper">
+                        <div class="card h-100 shadow-sm border therapist-card">
+                            <div class="card-body d-flex align-items-center p-3">
+                                
+                                <!-- Selection Checkbox -->
+                                    <div class="form-check me-3">
+                                            <input class="form-check-input therapist-checkbox" 
+                                                   type="checkbox" 
+                                                   name="ids" 
+                                                   value="@therapist.ID" 
+                                                   id="therapist_@therapist.ID"
+                                                   @(selectedIds.Contains(therapist.ID) ? "checked" : "") />
+                                     </div>
+
+                                <!-- Photo / Avatar -->
+                                <div class="me-3 position-relative">
+                                    @if (!string.IsNullOrEmpty(therapist.PhotoURL))
+                                    {
+                                        <img src="@therapist.PhotoURL"
+                                             alt="@therapist.Name"
+                                             class="rounded-circle object-fit-cover"
+                                             style="width: 54px; height: 54px;" />
+                                    }
+                                    else
+                                    {
+                                        <img src="/img/Therapist/1.jpg"
+                                             alt="@therapist.Name"
+                                             class="rounded-circle object-fit-cover"
+                                             style="width: 54px; height: 54px;" />
+                                    }
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <label class="form-check-label w-100 cursor-pointer" for="therapist_@therapist.ID">
+                                        <h6 class="fw-bold text-dark mb-1 text-truncate">@therapist.Name</h6>
+                                        
+                                        <!-- Specialization Badge -->
+                                        <span class="badge bg-info bg-opacity-10 text-white border border-info mb-1 specialization-badge">
+                                            @therapist.Specialization
+                                        </span>
+
+                                        <div class="text-muted small text-truncate">
+                                            <i class="bi bi-envelope me-1"></i>@therapist.Email
+                                        </div>
+                                        <div class="text-muted small text-truncate">
+                                            <i class="bi bi-phone me-1"></i>@therapist.Phone
+                                        </div>
+                                    </label>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- Empty State -->
+            <div class="text-center py-5 card shadow-sm border-0">
+                <div class="card-body">
+                    <i class="bi bi-people fs-1 text-muted"></i>
+                    <h5 class="mt-3 text-secondary">No available therapists found</h5>
+                    <p class="text-muted mb-0">All available therapists are already assigned or no records exist.</p>
+                </div>
+            </div>
+        }
+
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+            const checkboxes = document.querySelectorAll(".therapist-checkbox");
+            const submitBtn = document.getElementById("submitBtn");
+            const selectedCountHeader = document.getElementById("selectedCountHeader");
+            const searchInput = document.getElementById("therapistSearch");
+            const cardWrappers = document.querySelectorAll(".therapist-card-wrapper");
+
+            // Helper to toggle card colors and contrast on selection
+            function toggleCardSelection(card, isSelected) {
+                if (!card) return;
+
+                const nameHeader = card.querySelector("h6");
+                const smallContainers = card.querySelectorAll(".small");
+                const badge = card.querySelector(".specialization-badge");
+
+                if (isSelected) {
+                    card.classList.add("bg-primary", "text-white", "border-primary");
+
+                    if (nameHeader) {
+                        nameHeader.classList.remove("text-dark");
+                        nameHeader.classList.add("text-white");
+                    }
+
+                    // Loop through all .small divs (Email and Phone)
+                    smallContainers.forEach(el => {
+                        el.classList.remove("text-muted");
+                        el.classList.add("text-white-50");
+                    });
+
+                    // Contrast adjustment for badge
+                    if (badge) {
+                        badge.classList.remove("bg-opacity-10", "text-white");
+                        badge.classList.add("bg-white", "text-primary");
+                    }
+                } else {
+                    card.classList.remove("bg-primary", "text-white", "border-primary");
+
+                    if (nameHeader) {
+                        nameHeader.classList.remove("text-white");
+                        nameHeader.classList.add("text-dark");
+                    }
+
+                    // Revert all .small divs back to text-muted
+                    smallContainers.forEach(el => {
+                        el.classList.remove("text-white-50");
+                        el.classList.add("text-muted");
+                    });
+
+                    // Revert badge
+                    if (badge) {
+                        badge.classList.remove("bg-white", "text-primary");
+                        badge.classList.add("bg-opacity-10", "text-white");
+                    }
+                }
+            }
+
+            // 1. Recalculate checked counts and toggle submit button
+            function updateSelectionState() {
+                const checkedBoxes = document.querySelectorAll(".therapist-checkbox:checked");
+                const checkedCount = checkedBoxes.length;
+
+                // Update counter and enable/disable button
+                if (selectedCountHeader) selectedCountHeader.textContent = checkedCount;
+                if (submitBtn) submitBtn.disabled = (checkedCount === 0);
+
+                // Sync "Select All" state for visible elements
+                const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
+                    const wrapper = cb.closest(".therapist-card-wrapper");
+                    return wrapper && wrapper.style.display !== "none";
+                });
+
+                const visibleChecked = visibleCheckboxes.filter(cb => cb.checked);
+
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = visibleCheckboxes.length > 0 && visibleChecked.length === visibleCheckboxes.length;
+                    selectAllCheckbox.indeterminate = visibleChecked.length > 0 && visibleChecked.length < visibleCheckboxes.length;
+                }
+            }
+
+            // 2. Individual Checkbox listener
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", function () {
+                    const card = this.closest(".therapist-card");
+                    toggleCardSelection(card, this.checked);
+                    updateSelectionState();
+                });
+
+                // Set initial styling state on page load
+                const card = cb.closest(".therapist-card");
+                toggleCardSelection(card, cb.checked);
+            });
+
+            // 3. "Select All" Checkbox listener
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener("change", function () {
+                    const isChecked = this.checked;
+                    cardWrappers.forEach(wrapper => {
+                        if (wrapper.style.display !== "none") {
+                            const cb = wrapper.querySelector(".therapist-checkbox");
+                            const card = wrapper.querySelector(".therapist-card");
+                            if (cb) {
+                                cb.checked = isChecked;
+                                toggleCardSelection(card, isChecked);
+                            }
+                        }
+                    });
+                    updateSelectionState();
+                });
+            }
+
+            // 4. Live Search filtering
+            if (searchInput) {
+                searchInput.addEventListener("input", function () {
+                    const filter = searchInput.value.toLowerCase();
+
+                    cardWrappers.forEach(wrapper => {
+                        const text = wrapper.innerText.toLowerCase();
+                        wrapper.style.display = text.includes(filter) ? "" : "none";
+                    });
+
+                    updateSelectionState();
+                });
+            }
+
+            // Initial counter check on load
+            updateSelectionState();
+        });
+    </script>
+}

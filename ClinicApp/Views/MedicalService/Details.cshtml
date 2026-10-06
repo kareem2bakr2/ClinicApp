@@ -1,0 +1,389 @@
+﻿@using ClinicApp.ViewModel
+@model MedicalServiceDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Service Details - {Model.Name}";
+
+    // Separate Credit and Debit Payment Calculations
+    decimal totalCreditPayments = Model.Payments?.Where(p => p.IsCredit).Sum(p => p.Amount) ?? 0;
+    decimal totalDebitPayments = Model.Payments?.Where(p => !p.IsCredit).Sum(p => p.Amount) ?? 0;
+    decimal totalPatientFees = Model.Appointments?.Sum(a => a.feesOnpatient ?? 0) ?? 0;
+    decimal totalServiceFees = Model.Appointments?.Sum(a => a.feesOnMedicalService ?? 0) ?? 0;
+}
+
+<div class="container py-4 my-4">
+    <partial name="_alerts" />
+
+    <!-- Top Action Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
+            <div>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Directory
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Edit" asp-route-id="@Model.id" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Edit Service
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Header Overview & Date Filter -->
+    <div class="row g-4 mb-4">
+        <!-- Service Info -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="bi bi-hospital me-2"></i>@Model.Name
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">
+                        @(string.IsNullOrEmpty(Model.Description) ? "No description available." : Model.Description)
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <span class="text-muted d-block extra-small">Contract Discount</span>
+                            <span class="badge bg-info text-dark fs-6">@Model.Discount.ToString("0.##")% Off</span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted d-block extra-small">Start Date</span>
+                            <span class="fw-semibold small text-dark">@Model.StartDateContract.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted d-block extra-small">End Date</span>
+                            <span class="fw-semibold small text-dark">
+                                @(Model.EndDateContract.HasValue ? Model.EndDateContract.Value.ToString("dd MMM yyyy") : "Ongoing")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Filter Form -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-funnel me-1"></i> Filter Related Data by Date
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Details" method="get" class="row g-3">
+                        <input type="hidden" name="id" value="@Model.id" />
+
+                        <div class="col-6">
+                            <label class="form-label extra-small text-muted fw-semibold">From Date</label>
+                            <input type="date" name="StartDatefilter"
+                                   value="@(Model.StartDatefilter == DateOnly.MinValue ? "" : Model.StartDatefilter?.ToString("yyyy-MM-dd"))"
+                                   class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label extra-small text-muted fw-semibold">To Date</label>
+                            <input type="date" name="EndDatefilter"
+                                   value="@(Model.EndDatefilter == DateOnly.MaxValue ? "" : Model.EndDatefilter?.ToString("yyyy-MM-dd"))"
+                                   class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filter</button>
+                            <a asp-action="Details" asp-route-id="@Model.id" class="btn btn-sm btn-outline-secondary w-100">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Financial Metrics Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted extra-small d-block text-uppercase fw-bold">Total Credit Payments</span>
+                    <span class="fs-4 fw-bold text-success">$@totalCreditPayments.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted extra-small d-block text-uppercase fw-bold">Total Debit Payments</span>
+                    <span class="fs-4 fw-bold text-danger">$@totalDebitPayments.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted extra-small d-block text-uppercase fw-bold">Patient Fees</span>
+                    <span class="fs-4 fw-bold text-primary">$@totalPatientFees.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted extra-small d-block text-uppercase fw-bold">Medical Service Fees</span>
+                    <span class="fs-4 fw-bold text-dark">$@totalServiceFees.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Navigation Tabs for Appointments & Payments -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white pt-3 pb-0 border-bottom-0">
+            <ul class="nav nav-tabs card-header-tabs" id="detailsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments-pane" type="button" role="tab">
+                        <i class="bi bi-calendar-event me-1"></i> Appointments (@(Model.Appointments?.Count ?? 0))
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
+                        <i class="bi bi-credit-card me-1"></i> Payments (@(Model.Payments?.Count ?? 0))
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="tab-content" id="detailsTabContent">
+
+                <!-- TAB 1: APPOINTMENTS TABLE -->
+                <div class="tab-pane fade show active" id="appointments-pane" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <input type="text" id="apptSearchInput" class="form-control form-control-sm w-50" placeholder="Search appointments by patient name or ID..." />
+                        <span class="small text-muted" id="apptCountDisplay">Showing 0 items</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="appointmentsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patient Name</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>Patient Fee</th>
+                                    <th>Service Fee</th>
+                                    <th>Discount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Appointments != null && Model.Appointments.Any())
+                                {
+                                    foreach (var appt in Model.Appointments)
+                                    {
+                                        <tr class="appt-row">
+                                            <td class="fw-bold">
+                                                <a asp-controller="Appointment"
+                                                   asp-action="Details"
+                                                   asp-route-id="@appt.ID"
+                                                   class="text-decoration-none text-primary fw-bold"
+                                                   title="View Appointment Details">
+                                                    #@appt.ID <i class="bi bi-box-arrow-up-right extra-small ms-1"></i>
+                                                </a>
+                                            </td>
+                                            <td class="patient-name fw-semibold">@(string.IsNullOrEmpty(appt.PatientName) ? "—" : appt.PatientName)</td>
+                                            <td><span class="badge bg-secondary">@appt.Status</span></td>
+                                            <td class="small">@(appt.StartDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                                            <td class="text-primary fw-bold">$@(appt.feesOnpatient?.ToString("0.00") ?? "0.00")</td>
+                                            <td class="text-dark fw-bold">$@(appt.feesOnMedicalService?.ToString("0.00") ?? "0.00")</td>
+                                            <td><span class="badge bg-light text-dark border">@((appt.Discount ?? 0).ToString("0.##"))%</span></td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr class="no-data-row">
+                                        <td colspan="7" class="text-center py-4 text-muted">No appointments found within the filtered period.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Client-Side Pagination for Appointments -->
+                    <nav class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-center mb-0" id="apptPagination"></ul>
+                    </nav>
+                </div>
+
+                <!-- TAB 2: PAYMENTS TABLE -->
+                <div class="tab-pane fade" id="payments-pane" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <input type="text" id="pmtSearchInput" class="form-control form-control-sm w-50" placeholder="Search payments by ID or notes..." />
+                        <span class="small text-muted" id="pmtCountDisplay">Showing 0 items</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="paymentsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Amount</th>
+                                    <th>Payment Type</th>
+                                    <th>Method</th>
+                                    <th>Credit / Debit</th>
+                                    <th>Date</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Payments != null && Model.Payments.Any())
+                                {
+                                    foreach (var pmt in Model.Payments)
+                                    {
+                                        <tr class="pmt-row">
+                                            <td class="fw-bold">
+                                                @if (pmt.AppointmentID.HasValue)
+                                                {
+                                                    <a asp-controller="Appointment"
+                                                       asp-action="Details"
+                                                       asp-route-id="@pmt.AppointmentID"
+                                                       class="text-decoration-none text-primary fw-bold"
+                                                       title="View Linked Appointment Details">
+                                                        #@pmt.ID <i class="bi bi-box-arrow-up-right extra-small ms-1"></i>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span>#@pmt.ID</span>
+                                                }
+                                            </td>
+                                            <td class="fw-bold text-success">$@pmt.Amount.ToString("0.00")</td>
+                                            <td><span class="badge bg-light text-dark border">@pmt.PaymentType</span></td>
+                                            <td><span class="badge bg-info text-dark">@pmt.Method</span></td>
+                                            <td>
+                                                @if (pmt.IsCredit)
+                                                {
+                                                    <span class="badge bg-success">Credit</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Debit</span>
+                                                }
+                                            </td>
+                                            <td class="small">@pmt.Date.ToString("dd MMM yyyy HH:mm")</td>
+                                            <td class="small text-muted pmt-notes">@(string.IsNullOrEmpty(pmt.Notes) ? "—" : pmt.Notes)</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr class="no-data-row">
+                                        <td colspan="7" class="text-center py-4 text-muted">No payment records found within the filtered period.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Client-Side Pagination for Payments -->
+                    <nav class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-center mb-0" id="pmtPagination"></ul>
+                    </nav>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            function initClientPagination(config) {
+                const rows = Array.from(document.querySelectorAll(config.rowSelector));
+                const searchInput = document.getElementById(config.searchInputId);
+                const paginationContainer = document.getElementById(config.paginationId);
+                const countDisplay = document.getElementById(config.countDisplayId);
+                const pageSize = config.pageSize || 5;
+                let currentPage = 1;
+                let filteredRows = [...rows];
+
+                function render() {
+                    const totalPages = Math.ceil(filteredRows.length / pageSize) || 1;
+                    if (currentPage > totalPages) currentPage = totalPages;
+
+                    rows.forEach(r => r.style.display = "none");
+
+                    const start = (currentPage - 1) * pageSize;
+                    const end = start + pageSize;
+                    const pageRows = filteredRows.slice(start, end);
+                    pageRows.forEach(r => r.style.display = "");
+
+                    if (countDisplay) {
+                        countDisplay.textContent = `Showing ${filteredRows.length > 0 ? start + 1 : 0} to ${Math.min(end, filteredRows.length)} of ${filteredRows.length} entries`;
+                    }
+
+                    paginationContainer.innerHTML = "";
+                    if (totalPages <= 1) return;
+
+                    const prevLi = document.createElement("li");
+                    prevLi.className = `page-item ${currentPage === 1 ? "disabled" : ""}`;
+                    prevLi.innerHTML = `<a class="page-link" href="#">Previous</a>`;
+                    prevLi.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) { currentPage--; render(); }
+                    });
+                    paginationContainer.appendChild(prevLi);
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const li = document.createElement("li");
+                        li.className = `page-item ${currentPage === i ? "active" : ""}`;
+                        li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                        li.addEventListener("click", (e) => {
+                            e.preventDefault();
+                            currentPage = i;
+                            render();
+                        });
+                        paginationContainer.appendChild(li);
+                    }
+
+                    const nextLi = document.createElement("li");
+                    nextLi.className = `page-item ${currentPage === totalPages ? "disabled" : ""}`;
+                    nextLi.innerHTML = `<a class="page-link" href="#">Next</a>`;
+                    nextLi.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) { currentPage--; render(); }
+                    });
+                    paginationContainer.appendChild(nextLi);
+                }
+
+                if (searchInput) {
+                    searchInput.addEventListener("input", function() {
+                        const term = this.value.toLowerCase().trim();
+                        filteredRows = rows.filter(r => r.textContent.toLowerCase().includes(term));
+                        currentPage = 1;
+                        render();
+                    });
+                }
+
+                render();
+            }
+
+            initClientPagination({
+                rowSelector: ".appt-row",
+                searchInputId: "apptSearchInput",
+                paginationId: "apptPagination",
+                countDisplayId: "apptCountDisplay",
+                pageSize: 5
+            });
+
+            initClientPagination({
+                rowSelector: ".pmt-row",
+                searchInputId: "pmtSearchInput",
+                paginationId: "pmtPagination",
+                countDisplayId: "pmtCountDisplay",
+                pageSize: 5
+            });
+        });
+    </script>
+}

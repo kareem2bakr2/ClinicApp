@@ -1,0 +1,389 @@
+﻿@using ClinicApp.ViewModel
+@model TherapySessionModelView
+
+@{
+    ViewData["Title"] = $"Session Details - #{Model.ID}";
+    bool isPending = Model.SessionStatus == SessionStatus.Pending;
+    bool isCancelled = Model.SessionStatus == SessionStatus.Cancelled;
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <!-- Top Navigation & Conditional Action Toolbar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
+            <div>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Directory
+                </a>
+            </div>
+
+            <!-- Conditional Action Buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                @if (isPending)
+                {
+                    <!-- Complete Button (Triggers Edit & Complete Modal) -->
+                    <button type="button" class="btn btn-sm btn-success px-3" data-bs-toggle="modal" data-bs-target="#completeSessionModal">
+                        <i class="bi bi-check-circle me-1"></i> Complete Session
+                    </button>
+
+                    <!-- No Show Button -->
+                    <button type="button" class="btn btn-sm btn-warning text-dark px-3" data-bs-toggle="modal" data-bs-target="#noShowConfirmModal">
+                        <i class="bi bi-person-x me-1"></i> Mark No Show
+                    </button>
+
+                    <!-- Cancel Button -->
+                    <button type="button" class="btn btn-sm btn-outline-danger px-3" data-bs-toggle="modal" data-bs-target="#cancelConfirmModal">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Session
+                    </button>
+                }
+                else if (isCancelled)
+                {
+                    <!-- Reschedule Button (Triggers Reschedule Modal) -->
+                    <button type="button" class="btn btn-sm btn-primary px-3" data-bs-toggle="modal" data-bs-target="#rescheduleSessionModal">
+                        <i class="bi bi-calendar-event me-1"></i> Reschedule Session
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Session Metadata & Status -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="bi bi-clock-history me-2"></i>Therapy Session Overview
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <span class="text-muted d-block small">Session ID</span>
+                        <span class="fw-bold fs-5 text-dark">#@Model.ID</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted d-block small">Session Status</span>
+                        @switch (Model.SessionStatus)
+                        {
+                            case SessionStatus.Pending:
+                                <span class="badge bg-warning text-dark fs-6"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                break;
+                            case SessionStatus.Completed:
+                                <span class="badge bg-success fs-6"><i class="bi bi-check-all me-1"></i>Completed</span>
+                                break;
+                            case SessionStatus.Cancelled:
+                                <span class="badge bg-danger fs-6"><i class="bi bi-x-lg me-1"></i>Cancelled</span>
+                                break;
+                            case SessionStatus.NoShow:
+                                <span class="badge bg-dark fs-6"><i class="bi bi-person-slash me-1"></i>No Show</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary fs-6">@Model.SessionStatus</span>
+                                break;
+                        }
+                    </div>
+
+                    <hr />
+
+                    <div class="mb-3">
+                        <span class="text-muted d-block small">Session Date</span>
+                        <span class="fw-semibold fs-6 text-dark">
+                            <i class="bi bi-calendar3 me-1 text-primary"></i>
+                            @Model.SessionDate.ToString("dd MMMM yyyy")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted d-block small">Time Window</span>
+                        <span class="fw-semibold fs-6 text-dark">
+                            <i class="bi bi-clock me-1 text-secondary"></i>
+                            @Model.StartTime.ToString("hh:mm tt") &mdash; @Model.EndTime.ToString("hh:mm tt")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Relational Links & Clinical Notes -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-card-checklist me-2"></i>Assignment & Notes
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block small">Assigned Therapist</span>
+                            <span class="fw-semibold text-dark fs-6">
+                                <i class="bi bi-person-badge me-1 text-secondary"></i>
+                                @(string.IsNullOrEmpty(Model.TheeapistName) ? "Unassigned" : Model.TheeapistName)
+                            </span>
+                        </div>
+
+                        <!-- Treatment Plan Link -->
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block small">Treatment Plan</span>
+                            @if (Model.TreatmentPlanID.HasValue)
+                            {
+                                <a asp-controller="TreatmentPlan"
+                                   asp-action="Details"
+                                   asp-route-id="@Model.TreatmentPlanID"
+                                   class="fw-semibold text-primary fs-6 text-decoration-none"
+                                   title="View Treatment Plan Details">
+                                    <i class="bi bi-layers me-1 text-info"></i>
+                                    @(string.IsNullOrEmpty(Model.TreatmentPlanName) ? $"Plan #{Model.TreatmentPlanID}" : Model.TreatmentPlanName)
+                                    <i class="bi bi-box-arrow-up-right extra-small ms-1"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="fw-semibold text-dark fs-6">
+                                    <i class="bi bi-layers me-1 text-secondary"></i> Unassigned
+                                </span>
+                            }
+                        </div>
+
+                        @if (Model.AppointmentID.HasValue)
+                        {
+                            <div class="col-sm-12">
+                                <span class="text-muted d-block small">Linked Appointment</span>
+                                <a asp-controller="Appointment" asp-action="Details" asp-route-id="@Model.AppointmentID" class="fw-bold text-primary text-decoration-none">
+                                    Appointment #@Model.AppointmentID <i class="bi bi-box-arrow-up-right extra-small ms-1"></i>
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+                    <hr />
+
+                    <div>
+                        <span class="text-muted d-block small mb-2">Session Notes</span>
+                        <div class="p-3 bg-light rounded border text-secondary small" style="min-height: 100px;">
+                            @(string.IsNullOrEmpty(Model.Notes) ? "No special instructions or notes recorded for this session." : Model.Notes)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isPending)
+{
+    <!-- MODAL 1: COMPLETE SESSION -->
+    <div class="modal fade" id="completeSessionModal" tabindex="-1" aria-labelledby="completeSessionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form asp-action="Complete" method="post">
+                    <input type="hidden" name="ID" value="@Model.ID" />
+
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title fw-bold text-white" id="completeSessionModalLabel">
+                            <i class="bi bi-check-circle me-2"></i>Edit & Complete Session
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">Review or modify the actual session execution details before marking it as completed.</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">Session Date</label>
+                                <input type="date" name="SessionDate" value="@Model.SessionDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">Start Time</label>
+                                <input type="time" name="StartTime" value="@Model.StartTime.ToString("HH:mm")" class="form-control form-control-sm" required />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">End Time</label>
+                                <input type="time" name="EndTime" value="@Model.EndTime.ToString("HH:mm")" class="form-control form-control-sm" required />
+                            </div>
+                        </div>
+
+                        <!-- Searchable Therapist Selection List -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Select Executing Therapist <span class="text-danger">*</span></label>
+                            <input type="hidden" name="TheeapistID" id="selectedModalTherapistId" value="@Model.TheeapistID" />
+
+                            <input type="text" id="modalTherapistSearch" class="form-control form-control-sm mb-2" placeholder="Search therapist by name..." />
+
+                            <div class="border rounded bg-white p-2" style="max-height: 160px; overflow-y: auto;" id="modalTherapistContainer">
+                                @if (ViewBag.AllTherapists != null)
+                                {
+                                    <div class="list-group list-group-flush">
+                                        @foreach (var therapist in ViewBag.AllTherapists)
+                                        {
+                                            bool isSelected = Model.TheeapistID == therapist.id;
+                                            <button type="button"
+                                                    class="list-group-item list-group-item-action modal-therapist-item py-2 px-3 border-0 rounded mb-1 @(isSelected ? "active bg-primary text-white" : "")"
+                                                    data-id="@therapist.id"
+                                                    data-name="@therapist.name">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="fw-semibold small modal-therapist-name">@therapist.name</span>
+                                                    <span class="badge @(isSelected ? "bg-light text-dark" : "bg-light text-dark border")">ID: #@therapist.id</span>
+                                                </div>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small py-2 text-center">No therapists available.</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold small">Final Execution Notes</label>
+                            <textarea name="Notes" class="form-control form-control-sm" rows="3" placeholder="Add any notes about patient progress or session outcomes...">@Model.Notes</textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-success px-4">
+                            <i class="bi bi-check-lg me-1"></i> Confirm & Complete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CANCEL CONFIRMATION -->
+    <div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="Cancel" method="post">
+                    <input type="hidden" name="id" value="@Model.ID" />
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-danger" id="cancelConfirmModalLabel">Confirm Cancellation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-1">Are you sure you want to cancel Session <strong>#@Model.ID</strong>?</p>
+                        <span class="text-muted small">You can schedule a compensatory session later from the details page.</span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-danger px-4">Yes, Cancel Session</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: NO SHOW CONFIRMATION -->
+    <div class="modal fade" id="noShowConfirmModal" tabindex="-1" aria-labelledby="noShowConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="MarkNoShow" method="post">
+                    <input type="hidden" name="id" value="@Model.ID" />
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-dark" id="noShowConfirmModalLabel">Mark as No Show</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-1">Mark Session <strong>#@Model.ID</strong> as <strong>No Show</strong>?</p>
+                        <span class="text-muted small">This records that the patient missed their scheduled appointment window.</span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-warning text-dark px-4">Confirm No Show</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (isCancelled)
+{
+    <!-- MODAL 4: RESCHEDULE SESSION (FOR CANCELLED SESSIONS) -->
+    <div class="modal fade" id="rescheduleSessionModal" tabindex="-1" aria-labelledby="rescheduleSessionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="Reschedule" method="post">
+                    <input type="hidden" name="ID" value="@Model.ID" />
+
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold text-white" id="rescheduleSessionModalLabel">
+                            <i class="bi bi-calendar-event me-2"></i>Reschedule Compensatory Session
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">Set the new date and time window for this compensatory session.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">New Session Date <span class="text-danger">*</span></label>
+                            <input type="date" name="SessionDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Start Time <span class="text-danger">*</span></label>
+                                <input type="time" name="StartTime" value="@Model.StartTime.ToString("HH:mm")" class="form-control form-control-sm" required />
+                            </div>
+
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">End Time <span class="text-danger">*</span></label>
+                                <input type="time" name="EndTime" value="@Model.EndTime.ToString("HH:mm")" class="form-control form-control-sm" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary px-4">
+                            <i class="bi bi-calendar-check me-1"></i> Save & Reschedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const therapistItems = document.querySelectorAll(".modal-therapist-item");
+            const therapistSearchInput = document.getElementById("modalTherapistSearch");
+            const selectedTherapistIdInput = document.getElementById("selectedModalTherapistId");
+
+            // Live search filter inside modal
+            if (therapistSearchInput) {
+                therapistSearchInput.addEventListener("input", function() {
+                    const term = this.value.toLowerCase().trim();
+                    therapistItems.forEach(item => {
+                        const name = item.getAttribute("data-name").toLowerCase();
+                        item.style.display = name.includes(term) ? "" : "none";
+                    });
+                });
+            }
+
+            // Select therapist item logic
+            therapistItems.forEach(item => {
+                item.addEventListener("click", function() {
+                    therapistItems.forEach(i => i.classList.remove("active", "bg-primary", "text-white"));
+                    this.classList.add("active", "bg-primary", "text-white");
+
+                    const selectedId = this.getAttribute("data-id");
+                    selectedTherapistIdInput.value = selectedId;
+                });
+            });
+        });
+    </script>
+}

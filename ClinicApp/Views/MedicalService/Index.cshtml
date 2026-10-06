@@ -1,0 +1,227 @@
+﻿
+@model MediaclServiceIndexViewModel
+
+@{
+    ViewData["Title"] = "Medical Services Directory";
+    int pageSize = 10;
+    int totalPages = (int)Math.Ceiling((double)Model.Count / pageSize);
+    if (totalPages < 1) totalPages = 1;
+    int currentPage = Model.PageIndex < 1 ? 1 : Model.PageIndex;
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <div class="card shadow-sm border-0">
+        <!-- Card Header -->
+        <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h5 class="mb-0 fw-bold text-secondary">
+                <i class="bi bi-hospital me-2"></i>Medical Services Directory
+            </h5>
+            <a asp-action="Create" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Add New Service
+            </a>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- Search & Filter Form -->
+            <form asp-action="Index" method="get" class="row g-3 mb-4">
+                <input type="hidden" name="PageIndex" value="1" />
+
+                <!-- Search Input Bar -->
+                <div class="col-md-5">
+                    <label class="form-label small text-muted fw-semibold">Search Query</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text"
+                               name="SearchName"
+                               value="@Model.SearchName"
+                               class="form-control"
+                               placeholder="Search by ID, Name, or Discount..." />
+                    </div>
+                </div>
+
+                <!-- Contract Status Filter Dropdown -->
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Contract Status</label>
+                    <select asp-for="ContractStatus"
+                            asp-items="Html.GetEnumSelectList<ContractStatus>()"
+                            name="ContractStatus"
+                            class="form-select form-select-sm">
+                        <option value="">-- All Statuses --</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary px-3 w-100">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary w-100">Reset</a>
+                </div>
+            </form>
+
+            <!-- Data Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Service Name</th>
+                            <th>Description</th>
+                            <th>Discount</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.items != null && Model.items.Any())
+                        {
+                            foreach (var item in Model.items)
+                            {
+                                bool isExpired = item.EndDateContract.HasValue && item.EndDateContract.Value <= DateOnly.FromDateTime(DateTime.Today);
+                                bool isDraft = !item.EndDateContract.HasValue;
+
+                                <tr>
+                                    <td class="fw-bold">#@item.id</td>
+                                    <td class="fw-semibold text-dark">@item.Name</td>
+                                    <td class="small text-muted" style="max-width: 220px;">
+                                        @(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            @item.Discount.ToString("0.##")%
+                                        </span>
+                                    </td>
+                                    <td class="small">@item.StartDateContract.ToString("dd MMM yyyy")</td>
+                                    <td class="small">
+                                        @(item.EndDateContract.HasValue ? item.EndDateContract.Value.ToString("dd MMM yyyy") : "—")
+                                    </td>
+                                    <td>
+                                        @if (isDraft)
+                                        {
+                                            <span class="badge bg-secondary">Draft</span>
+                                        }
+                                        else if (isExpired)
+                                        {
+                                            <span class="badge bg-danger">Expired</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.id" class="btn btn-outline-info" title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteConfirmModal"
+                                                    data-id="@item.id"
+                                                    data-name="@item.Name"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> No medical services match the selected criteria.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1)
+            {
+                <nav class="mt-4">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-PageIndex="@(currentPage - 1)"
+                               asp-route-SearchName="@Model.SearchName"
+                               asp-route-ContractStatus="@Model.ContractStatus">Previous</a>
+                        </li>
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageIndex="@i"
+                                   asp-route-SearchName="@Model.SearchName"
+                                   asp-route-ContractStatus="@Model.ContractStatus">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-PageIndex="@(currentPage + 1)"
+                               asp-route-SearchName="@Model.SearchName"
+                               asp-route-ContractStatus="@Model.ContractStatus">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Soft Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Delete" method="post">
+                <input type="hidden" id="deleteServiceId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="deleteConfirmModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">Are you sure you want to delete <strong id="deleteServiceName"></strong>?</p>
+                    <span class="text-muted small">This action will soft-delete the service record.</span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger px-4">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if (deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const id = button.getAttribute('data-id');
+                    const name = button.getAttribute('data-name');
+
+                    document.getElementById('deleteServiceId').value = id;
+                    document.getElementById('deleteServiceName').textContent = `"${name}" (ID: #${id})`;
+                });
+            }
+        });
+    </script>
+}

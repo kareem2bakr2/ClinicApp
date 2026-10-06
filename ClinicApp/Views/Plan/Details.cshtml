@@ -1,0 +1,115 @@
+﻿@model PlanDetailsModelView
+
+@{
+    ViewData["Title"] = $"Plan Details - {Model.Name}";
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <!-- Top Action Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
+            <div>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Directory
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Edit" asp-route-id="@Model.ID" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Edit Plan
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Treatment Plan Specification Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold text-white">
+                <i class="bi bi-layers me-2"></i>@Model.Name
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4 text-center text-sm-start">
+                <div class="col-sm-4 border-end-sm">
+                    <span class="text-muted d-block extra-small text-uppercase fw-bold">Plan ID</span>
+                    <span class="fs-5 fw-bold text-dark">#@Model.ID</span>
+                </div>
+                <div class="col-sm-4 border-end-sm">
+                    <span class="text-muted d-block extra-small text-uppercase fw-bold">Number of Sessions</span>
+                    <span class="fs-5 fw-bold text-info">
+                        <i class="bi bi-clock-history me-1"></i>
+                        @(Model.numberOfSession.HasValue ? $"{Model.numberOfSession.Value} Sessions" : "Unspecified")
+                    </span>
+                </div>
+                <div class="col-sm-4">
+                    <span class="text-muted d-block extra-small text-uppercase fw-bold">Package Price</span>
+                    <span class="fs-5 fw-bold text-success">
+                        @(Model.Price.HasValue ? $"${Model.Price.Value.ToString("0.00")}" : "Free / N/A")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Linked Appointments Card & Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-secondary">
+                <i class="bi bi-calendar-event me-2"></i>Linked Appointments (@(Model._items?.Count ?? 0))
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">Appointment ID</th>
+                            <th style="width: 25%;">Status</th>
+                            <th style="width: 27.5%;">Start Date & Time</th>
+                            <th style="width: 27.5%;">End Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model._items != null && Model._items.Any())
+                        {
+                            foreach (var appt in Model._items)
+                            {
+                                <tr>
+                                    <!-- Appointment ID as Clickable Link -->
+                                    <td class="fw-bold">
+                                        <a asp-controller="Appointment"
+                                           asp-action="Details"
+                                           asp-route-id="@appt.ID"
+                                           class="text-decoration-none text-primary fw-bold"
+                                           title="View Appointment Details">
+                                            #@appt.ID <i class="bi bi-box-arrow-up-right extra-small ms-1"></i>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@appt.Status</span>
+                                    </td>
+                                    <td class="small">
+                                        @(appt.StartDate.HasValue ? appt.StartDate.Value.ToString("dd MMM yyyy hh:mm tt") : "—")
+                                    </td>
+                                    <td class="small">
+                                        @(appt.EndDate.HasValue ? appt.EndDate.Value.ToString("dd MMM yyyy hh:mm tt") : "—")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle me-1"></i> No appointments currently linked to this treatment plan.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

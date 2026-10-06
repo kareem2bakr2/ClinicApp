@@ -1,0 +1,249 @@
+﻿@using ClinicApp.ViewModel
+@model PatientDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Patient Details - {Model.Name}";
+}
+
+<div class="container py-4 my-5">
+
+    <!-- Top Action & Navigation Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Patient" asp-action="Index">Patients</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Details</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0">@Model.Name</h2>
+            <small class="text-muted">Username: <code>@@@Model.UserName</code> | Patient ID: P-@Model.ID</small>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (!User.IsInRole(ApplicationRole.Patient))
+            {
+                <a asp-controller="Appointment" asp-action="Add" asp-route-Patientid="@Model.ID" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add Appointment
+                </a>
+                <span class="pr-1"></span>
+
+            }
+
+
+            <a asp-controller="Patient" asp-action="Edit" asp-route-id="@Model.ID" class="btn btn-outline-warning">
+                <i class="bi bi-pencil me-1"></i> Edit Patient
+            </a>
+
+            @if (!User.IsInRole(ApplicationRole.Patient))
+            {
+                <span class="pr-1"></span>
+                <a asp-controller="Patient" asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to List
+                </a>
+            }
+            else{
+                <span class="pr-1"></span>
+                <a asp-controller="Appointment" asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to List
+                </a>
+            }
+
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Patient Information Sidebar / Cards -->
+        <div class="col-lg-4">
+
+            <!-- Personal Summary Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0 fw-bold fs-5 text-primary">
+                    <i class="bi bi-person-badge me-2"></i> Personal Info
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item px-0 d-flex justify-content-between">
+                            <span class="text-muted">Gender</span>
+                            <span class="fw-semibold">@Model.Gender</span>
+                        </li>
+                        <li class="list-group-item px-0 d-flex justify-content-between">
+                            <span class="text-muted">Age</span>
+                            <span class="fw-semibold">@Model.Age yrs</span>
+                        </li>
+                        <li class="list-group-item px-0 d-flex justify-content-between">
+                            <span class="text-muted">Date of Birth</span>
+                            <span class="fw-semibold">@Model.DOB</span>
+                        </li>
+                        <li class="list-group-item px-0 d-flex justify-content-between">
+                            <span class="text-muted">Registered On</span>
+                            <span class="fw-semibold">@Model.RegistrationDate.ToString("g")</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact & Address Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0 fw-bold fs-5 text-primary">
+                    <i class="bi bi-telephone me-2"></i> Contact Details
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-1">Phone Number</span>
+                        <a href="tel:@Model.Phone" class="text-decoration-none fw-semibold text-dark">
+                            <i class="bi bi-phone me-2 text-primary"></i> @Model.Phone
+                        </a>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted small d-block mb-1">Email Address</span>
+                        <a href="mailto:@Model.Email" class="text-decoration-none fw-semibold text-dark">
+                            <i class="bi bi-envelope me-2 text-primary"></i> @Model.Email
+                        </a>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block mb-1">Residential Address</span>
+                        <span class="fw-semibold"><i class="bi bi-geo-alt me-2 text-primary"></i> @Model.Address</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact Card -->
+            <div class="card shadow-sm border-0 border-start border-danger border-4">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0 fw-bold fs-5 text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Emergency Contact
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <span class="text-muted small d-block">Contact Person</span>
+                        <span class="fw-bold">@Model.EmergencyContact</span>
+                        <span class="badge bg-light text-dark ms-1 border">@Model.EmergencyRelationShip</span>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">Emergency Phone</span>
+                        <a href="tel:@Model.EmergencyPhone" class="text-decoration-none fw-bold text-danger">
+                            <i class="bi bi-telephone-fill me-1"></i> @Model.EmergencyPhone
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Appointments List & History -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <h5 class="fw-bold mb-0 me-2 pr-1">  Appointments  </h5>
+                        <span class="badge bg-primary rounded-pill"> @Model.Appointments.Count </span>
+                    </div>
+
+                    <!-- Client Search Filter -->
+                    <div class="input-group input-group-sm" style="width: 230px;">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i> </span>
+                        <input type="text" id="appointmentSearch" class="form-control" placeholder="Search appointments...">
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    @if (Model.Appointments != null && Model.Appointments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="appointmentsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">ID</th>
+                                        <th>Service</th>
+                                        <th>Therapist</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appt in Model.Appointments)
+                                    {
+                                        <tr>
+                                            <td class="ps-3 fw-semibold">Ap-@appt.ID</td>
+                                            <td>
+                                                <span class="fw-bold text-dark">@appt.medicalServiceName</span>
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-person-circle text-muted me-1"></i> @appt.TherapistName
+                                            </td>
+                                            <td>
+                                                <small class="d-block fw-semibold">
+                                                    @appt.StartDate
+                                                </small>
+                                                <small class="text-muted">to @appt.EndDate</small>
+                                            </td>
+                                            <td>
+                                                <!-- Dynamic Enum Status Badge Styling -->
+                                                @switch (appt.Status.ToString().ToLower())
+                                                {
+                                                    case "completed":
+                                                        <span class="badge bg-success bg-opacity-10 text-white border border-success">Completed</span>
+                                                        break;
+                                                    case "pending":
+                                                    case "scheduled":
+                                                        <span class="badge bg-warning bg-opacity-10 text-white-emphasis border border-warning">@appt.Status</span>
+                                                        break;
+                                                    case "cancelled":
+                                                        <span class="badge bg-danger bg-opacity-10 text-white border border-danger">Cancelled</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary bg-opacity-10 text-white border">@appt.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <a asp-controller="Appointment"
+                                                   asp-action="Details"
+                                                   asp-route-id="@appt.ID"
+                                                   class="btn btn-sm btn-outline-secondary"
+                                                   title="View Full Appointment Details">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                            <h6 class="mt-2 text-muted fw-normal">No appointments recorded for this patient.</h6>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Client-side quick filter for Appointments table
+        document.addEventListener("DOMContentLoaded", function() {
+            const searchInput = document.getElementById("appointmentSearch");
+            const tableBody = document.querySelector("#appointmentsTable tbody");
+
+            if (searchInput && tableBody) {
+                searchInput.addEventListener("input", function() {
+                    const filter = searchInput.value.toLowerCase();
+                    const rows = tableBody.getElementsByTagName("tr");
+
+                    Array.from(rows).forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(filter) ? "" : "none";
+                    });
+                });
+            }
+        });
+    </script>
+}

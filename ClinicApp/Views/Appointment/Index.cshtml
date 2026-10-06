@@ -1,0 +1,343 @@
+﻿@model FilterAppointmentListViewModel
+
+@{
+    ViewData["Title"] = "Appointments Directory";
+
+    // Extract values from ViewBag
+    var indexData = ViewBag.Data as AppointmentIndexViewModel;
+    var appointmentsList = indexData?.appointments ?? new List<AppointmentListViewModel>();
+    var availableTherapists = indexData?.AvailableTherapists ?? new List<string>();
+    var availableServices = indexData?.AvailableMedicalServices ?? new List<string>();
+    var availablePlans = indexData?.AvailablePlans ?? new List<string>();
+}
+
+<div class="container-fluid py-4 my-5">
+    <partial name="_alerts" />
+
+    <div class="d-flex justify-content-between align-items-center mb-4 ">
+        <div >
+            <h2 class="fw-bold mb-1">Appointments Directory</h2>
+            <p class="text-muted mb-0">Manage clinic appointments.</p>
+        </div>
+
+    </div>
+    @if (!User.IsInRole(ApplicationRole.Patient))
+    {
+        <div class="d-flex justify-content-end gap-2 mt-3 my-3">
+            <a asp-action="Add" class="btn btn-outline-info">
+                Book Appointment
+            </a>
+        </div>
+    }
+    <!-- Server-Side Filter Accordion -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold text-secondary">
+                <i class="bi bi-funnel me-2"></i>Advanced Filters
+            </h5>
+        </div>
+        <div class="card-body bg-light">
+            <form asp-action="Index" method="get">
+                <div class="row g-3">
+
+                    @if (!User.IsInRole(ApplicationRole.Patient))
+                        {
+                        <!-- Therapist Filter Container with Search Bar -->
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Therapist</label>
+                            <div class="card border bg-white p-2">
+                                <input type="text" class="form-control form-control-sm mb-2 filter-box-search" placeholder="Search therapists..." data-target="therapist-list" />
+                                <div id="therapist-list" style="height: 110px; overflow-y: auto;">
+                                    @foreach (var therapist in availableTherapists)
+                                    {
+                                        bool isChecked = Model?.TherapistsNames?.Contains(therapist) ?? false;
+                                        <div class="form-check filter-item">
+                                            <input class="form-check-input" type="checkbox" name="TherapistsNames" value="@therapist" id="therapist_@therapist.GetHashCode()" @(isChecked ? "checked" : "") />
+                                            <label class="form-check-label small" for="therapist_@therapist.GetHashCode()">@therapist</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Medical Service Filter Container with Search Bar -->
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Medical Service</label>
+                            <div class="card border bg-white p-2">
+                                <input type="text" class="form-control form-control-sm mb-2 filter-box-search" placeholder="Search services..." data-target="service-list" />
+                                <div id="service-list" style="height: 110px; overflow-y: auto;">
+                                    @foreach (var service in availableServices)
+                                    {
+                                        bool isChecked = Model?.MedicalServicesNames?.Contains(service) ?? false;
+                                        <div class="form-check filter-item">
+                                            <input class="form-check-input" type="checkbox" name="MedicalServicesNames" value="@service" id="service_@service.GetHashCode()" @(isChecked ? "checked" : "") />
+                                            <label class="form-check-label small" for="service_@service.GetHashCode()">@service</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Treatment Plan Filter Container with Search Bar -->
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Treatment Plan</label>
+                            <div class="card border bg-white p-2">
+                                <input type="text" class="form-control form-control-sm mb-2 filter-box-search" placeholder="Search plans..." data-target="plan-list" />
+                                <div id="plan-list" style="height: 110px; overflow-y: auto;">
+                                    @foreach (var plan in availablePlans)
+                                    {
+                                        bool isChecked = Model?.PlanNames?.Contains(plan) ?? false;
+                                        <div class="form-check filter-item">
+                                            <input class="form-check-input" type="checkbox" name="PlanNames" value="@plan" id="plan_@plan.GetHashCode()" @(isChecked ? "checked" : "") />
+                                            <label class="form-check-label small" for="plan_@plan.GetHashCode()">@plan</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appointment Status Filter Container with Search Bar -->
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Status</label>
+                            <div class="card border bg-white p-2">
+                                <input type="text" class="form-control form-control-sm mb-2 filter-box-search" placeholder="Search statuses..." data-target="status-list" />
+                                <div id="status-list" style="height: 110px; overflow-y: auto;">
+                                    @foreach (AppointmentStatus status in Enum.GetValues(typeof(AppointmentStatus)))
+                                    {
+                                        bool isChecked = Model?.appointmentStatuses?.Contains(status) ?? false;
+                                        <div class="form-check filter-item">
+                                            <input class="form-check-input" type="checkbox" name="appointmentStatuses" value="@status" id="status_@status" @(isChecked ? "checked" : "") />
+                                            <label class="form-check-label small" for="status_@status">@status</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+              
+
+                        }
+                       
+                    <!-- Date Range Filters -->
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Start Date Range</label>
+                        <div class="input-group input-group-sm">
+                            <input type="date" asp-for="StartDateFrom" class="form-control" />
+                            <input type="date" asp-for="StartDateTo" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">End Date Range</label>
+                        <div class="input-group input-group-sm">
+                            <input type="date" asp-for="EndDateFrom" class="form-control" />
+                            <input type="date" asp-for="EndDateTo" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Creation Date Range</label>
+                        <div class="input-group input-group-sm">
+                            <input type="date" asp-for="CreationDateFrom" class="form-control" />
+                            <input type="date" asp-for="CreationDateTo" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+                    </a>
+                    <button type="submit" class="btn btn-sm btn-primary px-4">
+                        <i class="bi bi-search me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Instant Client-Side Table Search Bar -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-2">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="frontendSearchBar" class="form-control border-start-0 ps-0" placeholder="Instant content search..." />
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrollable Data Table Card -->
+    <div class="card shadow-sm border-0">
+        <div style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0" id="appointmentsTable">
+                <thead class="table-light position-sticky top-0" style="z-index: 2;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Patient Name</th>
+                        <th>Therapist</th>
+                        <th>Service</th>
+                        <th>Plan</th>
+                        <th>Receptionist</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Creation Date</th>
+                        <th>Final Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (appointmentsList.Any())
+                    {
+                        @foreach (var item in appointmentsList)
+                        {
+                            <tr class="appointment-row">
+                                <td class="fw-bold">#@item.ID</td>
+                                <td><span class="badge bg-info text-dark">@item.Status</span></td>
+                                <td>
+                                    @if (item.PatientID.HasValue)
+                                    {
+                                        <a asp-controller="Patient" asp-action="Details" asp-route-id="@item.PatientID" class="fw-semibold text-decoration-none">
+                                            @(string.IsNullOrEmpty(item.patientName) ? "Patient #" + item.PatientID : item.patientName)
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(item.patientName) ? "N/A" : item.patientName)</span>
+                                    }
+                                </td>
+                                <td>@(string.IsNullOrEmpty(item.TherapistName) ? "N/A" : item.TherapistName)</td>
+                                <td>@(string.IsNullOrEmpty(item.medicalServiceName) ? "N/A" : item.medicalServiceName)</td>
+                                <td>@(string.IsNullOrEmpty(item.planName) ? "N/A" : item.planName)</td>
+                                <td>@(string.IsNullOrEmpty(item.ReceptName) ? "N/A" : item.ReceptName)</td>
+                                <td>@(item.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                <td>@(item.EndDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                <td>@item.CreationDate.ToString("MMM dd, yyyy")</td>
+                                <td class="fw-bold text-success">$@(item.FinalPrice?.ToString("0.00") ?? "0.00")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.ID" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye-fill"></i> Details
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr class="no-data-row"><td colspan="12" class="text-center py-4 text-muted">No appointments found matching your criteria.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2" id="paginationControls"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. In-Box Checkbox Filtering Logic for each dropdown box
+            document.querySelectorAll(".filter-box-search").forEach(input => {
+                input.addEventListener("input", function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    const targetId = this.getAttribute("data-target");
+                    const container = document.getElementById(targetId);
+
+                    if (container) {
+                        container.querySelectorAll(".filter-item").forEach(item => {
+                            const labelText = item.querySelector("label").textContent.toLowerCase();
+                            item.style.display = labelText.includes(searchTerm) ? "" : "none";
+                        });
+                    }
+                });
+            });
+
+            // 2. Table Instant Search & 25-Row Client-Side Pagination
+            const pageSize = 25;
+            const searchInput = document.getElementById("frontendSearchBar");
+            const allRows = Array.from(document.querySelectorAll(".appointment-row"));
+
+            let filteredRows = [...allRows];
+            let currentPage = 1;
+
+            function applyFrontendSearchAndPagination() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+                filteredRows = allRows.filter(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    return rowText.includes(searchTerm);
+                });
+
+                allRows.forEach(row => row.style.display = "none");
+
+                const totalItems = filteredRows.length;
+                const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                const startIdx = (currentPage - 1) * pageSize;
+                const endIdx = Math.min(startIdx + pageSize, totalItems);
+
+                for (let i = startIdx; i < endIdx; i++) {
+                    if (filteredRows[i]) {
+                        filteredRows[i].style.display = "";
+                    }
+                }
+
+                renderPaginationControls(totalItems, startIdx, endIdx, totalPages);
+            }
+
+            function renderPaginationControls(totalItems, startIdx, endIdx, totalPages) {
+                const container = document.getElementById("paginationControls");
+                if (!container) return;
+
+                if (totalItems === 0) {
+                    container.innerHTML = `<small class="text-muted">Showing 0 entries</small>`;
+                    return;
+                }
+
+                let html = `
+                    <small class="text-muted">Showing ${startIdx + 1} to ${endIdx} of ${totalItems} entries</small>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                            <button type="button" class="page-link" data-page="${currentPage - 1}">Previous</button>
+                        </li>`;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <button type="button" class="page-link" data-page="${i}">${i}</button>
+                        </li>`;
+                }
+
+                html += `
+                        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                            <button type="button" class="page-link" data-page="${currentPage + 1}">Next</button>
+                        </li>
+                    </ul>`;
+
+                container.innerHTML = html;
+
+                container.querySelectorAll(".page-link").forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        const newPage = parseInt(this.getAttribute("data-page"));
+                        if (newPage >= 1 && newPage <= totalPages) {
+                            currentPage = newPage;
+                            applyFrontendSearchAndPagination();
+                        }
+                    });
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener("input", function() {
+                    currentPage = 1;
+                    applyFrontendSearchAndPagination();
+                });
+            }
+
+            applyFrontendSearchAndPagination();
+        });
+    </script>
+}

@@ -1,0 +1,160 @@
+﻿@using ClinicApp.Data
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<!-- Clean, low-height Navbar pinned at the top -->
+<header class="border-bottom bg-white shadow-sm w-100" style="position: absolute; top: 0; left: 0; z-index: 1030;">
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light py-1" style="min-height: 50px;">
+
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center py-0" asp-controller="Home" asp-action="Index">
+                <img src="~/img/logo.png" alt="logo" style="height: 32px; width: auto;">
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler py-1 px-2" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Links -->
+            <div class="collapse navbar-collapse main-menu-item justify-content-center" id="navbarSupportedContent">
+                <ul class="navbar-nav align-items-center gap-lg-1">
+                    
+
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        <!-- Admin Dropdown Menu -->
+                        @if (User.IsInRole(ApplicationRole.Admin))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium py-1 text-danger" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i> Admin
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Index">User Management</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Register New User</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="Therapist" asp-action="Index">Therapists</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Receptionist" asp-action="Index">Receptionists</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Patient" asp-action="Index">Patients</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Equipment" asp-action="Index">Equipment</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ExerciseCategory" asp-action="Index">Exercise Categories</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="Payment" asp-action="Index">Payments & Invoices</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Plan" asp-action="Index">Plans</a></li>
+
+                                </ul>
+                            </li>
+                        }
+
+                        <!-- Receptionist Dropdown Menu -->
+                        @if (User.IsInRole(ApplicationRole.Admin) || User.IsInRole(ApplicationRole.Receptionist))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium py-1 text-primary" href="#" id="receptionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-building me-1"></i> Reception
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="receptionDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Index">Appointments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Patient" asp-action="Index">Patients List</a></li>
+                                    <li><a class="dropdown-item" asp-controller="MedicalService" asp-action="Index">Medical Services</a></li>
+                                </ul>
+                            </li>
+                        }
+
+                        <!-- Therapist Dropdown Menu -->
+                        @if (User.IsInRole(ApplicationRole.Admin) || User.IsInRole(ApplicationRole.Therapist))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-medium py-1 text-success" href="#" id="therapistDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-heart-pulse me-1"></i> Clinical
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="therapistDropdown">
+                                    <li><a class="dropdown-item" asp-controller="TherapySession" asp-action="Index">Therapy Sessions</a></li>
+                                    <li><a class="dropdown-item" asp-controller="TreatmentPlan" asp-action="Index">Treatment Plans</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Exercise" asp-action="Index">Exercise Library</a></li>
+
+                                </ul>
+                            </li>
+                        }
+
+                        <!-- Patient Menu -->
+                        @if (User.IsInRole(ApplicationRole.Patient))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-medium py-1" asp-controller="Appointment" asp-action="Index">My Appointments</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-medium py-1" asp-controller="TherapySession" asp-action="Index">My Sessions</a>
+                            </li>
+                           
+                        }
+                    }
+                    @* else
+                    {
+                        <!-- Guest Links -->
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium py-1" asp-controller="Therapist" asp-action="Index">Our Doctors</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium py-1" asp-controller="MedicalService" asp-action="Index">Services</a>
+                        </li>
+                    } *@
+                </ul>
+            </div>
+
+            <!-- Right-hand User Controls & Hotline -->
+            <div class="d-none d-lg-flex align-items-center gap-2">
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle rounded-pill px-3" type="button" id="userMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i> @User.Identity?.Name
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userMenuBtn">
+                            
+                            @if(!User.IsInRole(ApplicationRole.Admin))
+                            {
+                                <li>
+                                    <a class="dropdown-item text-primary" asp-controller="Account" asp-action="Profile">
+                                        <i class="bi bi-person-circle me-1"></i> My Profile
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                            }
+
+                            <li>
+
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                                    </button>
+                               
+                                </form>
+                            
+                            
+                            </li>
+
+
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <a class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" asp-controller="Account" asp-action="Login">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </a>
+                }
+
+                <a class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" href="tel:09856">
+                    <i class="bi bi-telephone-fill me-1"></i> 09856
+                </a>
+            </div>
+
+        </nav>
+    </div>
+</header>

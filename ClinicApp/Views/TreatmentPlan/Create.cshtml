@@ -1,0 +1,87 @@
+﻿@using ClinicApp.ViewModel
+@model TreatmentPlanModelview
+
+@{
+    ViewData["Title"] = "Create Treatment Plan";
+}
+
+<div class="container py-5 my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <!-- Header Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold text-secondary">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Treatment Plan
+                    </h5>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <!-- Name Field -->
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g., Post-Op Rehabilitation" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Category Dropdown -->
+                        <div class="mb-3">
+                            <label asp-for="Category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select asp-for="Category"
+                                    asp-items="Html.GetEnumSelectList<TreatmentPlanCategory>()"
+                                    class="form-select">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Level Dropdown -->
+                        <div class="mb-3">
+                            <label asp-for="Level" class="form-label fw-semibold">Level <span class="text-danger">*</span></label>
+                            <select asp-for="Level"
+                                    asp-items="Html.GetEnumSelectList<TreatmentPlanLevel>()"
+                                    class="form-select">
+                                <option value="">-- Select Level --</option>
+                            </select>
+                            <span asp-validation-for="Level" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Notes Multiline Text -->
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label fw-semibold">Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Enter additional details or instructions (max 1000 characters)..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i> Save Plan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

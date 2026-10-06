@@ -1,0 +1,295 @@
+﻿@model List<TherapistListViewModel>
+
+@{
+    ViewData["Title"] = "Therapists";
+}
+
+<div class="container py-4 my-5">
+
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Therapist Team</h2>
+            <p class="text-muted mb-0">Manage clinic therapists, specializations, and hourly rates</p>
+        </div>
+
+        <a asp-controller="Therapist"
+           asp-action="ADDToTeam"
+           class="btn btn-primary">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Therapist
+        </a>
+    </div>
+
+    <!-- Quick Search & Filter Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text"
+                               id="therapistSearch"
+                               class="form-control border-start-0 ps-0"
+                               placeholder="Search by name, phone, email, or specialization..." />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" id="seniorityFilter">
+                        <option value="">All Seniority Levels</option>
+                        @foreach (var level in Enum.GetValues(typeof(SeniorityLevel)))
+                        {
+                            <option value="@level">@level</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="therapistsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">ID</th>
+                                <th>Therapist Name</th>
+                                <th>Specialization</th>
+                                <th>Seniority</th>
+                                <th>Hourly Rate</th>
+                                <th>Contact Info</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <!-- ID -->
+                                    <td class="ps-4 fw-semibold text-muted">#@item.ID</td>
+
+                                    <!-- Name -->
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 38px; height: 38px;">
+                                                @if (@item.PhotoURL is null)
+                                                {
+                                                    <img src="~/img/Therapist/1.jpg" />
+                                                }
+                                                else
+                                                {
+                                                   <img src="@item.PhotoURL" />
+                                                }
+                                            </div>
+                                            <span class="fw-bold text-dark">@item.Name</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Specialization Badge -->
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-10 text-white border border-info px-2 py-1">
+                                            <i class="bi bi-briefcase me-1"></i>@item.Specialization
+                                        </span>
+                                    </td>
+
+                                    <!-- Seniority Level Badge -->
+                                    <td>
+                                        @switch (item.SeniorityLevel.ToString().ToLower())
+                                        {
+                                            case "senior":
+                                            case "lead":
+                                                <span class="badge bg-success bg-opacity-10 text-white border border-success">
+                                                    @item.SeniorityLevel
+                                                </span>
+                                                break;
+                                            case "mid":
+                                            case "intermediate":
+                                                <span class="badge bg-primary bg-opacity-10 text-white border border-primary">
+                                                    @item.SeniorityLevel
+                                                </span>
+                                                break;
+                                            case "junior":
+                                                <span class="badge bg-warning bg-opacity-10 text-white-emphasis border border-warning">
+                                                    @item.SeniorityLevel
+                                                </span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary bg-opacity-10 text-white border">
+                                                    @item.SeniorityLevel
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <!-- Hourly Rate -->
+                                    <td>
+                                        <span class="fw-bold text-dark">@item.hourRate.ToString("C")</span>
+                                        <small class="text-muted">/ hr</small>
+                                    </td>
+
+                                    <!-- Contact Info -->
+                                    <td>
+                                        <div class="d-flex flex-column small">
+                                            <a href="tel:@item.Phone" class="text-decoration-none text-dark fw-semibold mb-1">
+                                                <i class="bi bi-telephone me-1 text-primary"></i>@item.Phone
+                                            </a>
+                                            <a href="mailto:@item.Email" class="text-decoration-none text-muted">
+                                                <i class="bi bi-envelope me-1 text-primary"></i>@item.Email
+                                            </a>
+                                        </div>
+                                    </td>
+
+                                    <!-- Action Buttons -->
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group" role="group">
+                                            <!-- View Details -->
+                                            <a asp-controller="Therapist"
+                                               asp-action="Details"
+                                               asp-route-id="@item.ID"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <!-- Edit -->
+                                            <a asp-controller="Therapist"
+                                               asp-action="Edit"
+                                               asp-route-id="@item.ID"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Edit Therapist">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            <!-- Delete Button -->
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Delete Therapist"
+                                                    onclick="openDeleteTherapistModal('@item.ID', '@item.Name')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <i class="bi bi-person-badge fs-1 text-muted"></i>
+                    <h5 class="mt-3 text-secondary">No therapists registered yet</h5>
+                    <p class="text-muted">Get started by creating your first therapist record.</p>
+                    <a asp-controller="Therapist" asp-action="ADDToTeam" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Therapist
+                    </a>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal Confirmation -->
+<div class="modal fade" id="deleteTherapistModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold text-white" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Confirm Remove
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4 text-center">
+                <p class="fs-5 mb-1">Are you sure you want to remove therapist for?</p>
+                <p class="fw-bold text-danger fs-5" id="deleteTherapistName"></p>
+                <p class="text-muted small mb-0">This operation cannot be undone.</p>
+            </div>
+
+            <div class="modal-footer bg-light justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <form asp-controller="Therapist" asp-action="RemoveFromTeam" method="post" asp-route-managerid="@ViewBag.ManagerDBId" id="deleteTherapistForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteTherapistId" name="id" value="" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Remove
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global delete modal opener
+        function openDeleteTherapistModal(id, name) {
+            const deleteIdEl = document.getElementById("deleteTherapistId");
+            const deleteNameEl = document.getElementById("deleteTherapistName");
+            const modalEl = document.getElementById("deleteTherapistModal");
+
+            if (deleteIdEl) deleteIdEl.value = id;
+            if (deleteNameEl) deleteNameEl.textContent = name;
+
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        // Live client-side search & filtering
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("therapistSearch");
+    const seniorityFilter = document.getElementById("seniorityFilter");
+    const tableBody = document.querySelector("#therapistsTable tbody");
+
+    function filterTable() {
+        if (!tableBody) return;
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase() : "";
+        const seniorityVal = seniorityFilter ? seniorityFilter.value.toLowerCase() : "";
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+        rows.forEach(row => {
+            const rowText = row.innerText.toLowerCase();
+            // Seniority level is in the 4th column (index 3)
+            const seniorityText = row.cells[3] ? row.cells[3].textContent.trim().toLowerCase() : "";
+
+            const matchesSearch = rowText.includes(searchVal);
+            const matchesSeniority = seniorityVal === "" || seniorityText.includes(seniorityVal);
+
+            row.style.display = (matchesSearch && matchesSeniority) ? "" : "none";
+        });
+    }
+
+    // 1. Listen for search typing
+    if (searchInput) {
+        searchInput.addEventListener("input", filterTable);
+    }
+
+    // 2. Listen for native select changes
+    if (seniorityFilter) {
+        seniorityFilter.addEventListener("change", filterTable);
+
+        // 3. Listen for jQuery / nice-select change triggers
+        if (window.jQuery) {
+            $(seniorityFilter).on("change", function () {
+                filterTable();
+            });
+        }
+    }
+});
+    </script>
+}

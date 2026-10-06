@@ -1,0 +1,70 @@
+﻿@model ClinicApp.ViewModel.MedicalServiceDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Edit Medical Service - {Model.Name}";
+}
+
+<div class="container py-5 my-5">
+    <partial name="_alerts" />
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-white">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Medical Service
+                    </h5>
+                    <a asp-action="Index" class="btn btn-sm btn-light">
+                        <i class="bi bi-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+
+                <div class="card-body p-4">
+                    <form asp-action="Edit" method="post" id="editMedicalServiceForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Hidden ID Property -->
+                        <input type="hidden" asp-for="id" />
+
+                        <!-- Service Name -->
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">Service Name <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. Corporate Insurance Package" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <!-- End Date Contract -->
+                        <div class="mb-3">
+                            <label asp-for="EndDateContract" class="form-label fw-semibold">Contract End Date</label>
+                            <input asp-for="EndDateContract" 
+                                   type="date" 
+                                   value="@(Model.EndDateContract.HasValue ? Model.EndDateContract.Value.ToString("yyyy-MM-dd") : "")" 
+                                   class="form-control form-control-sm" />
+                            <small class="text-muted d-block extra-small">Leave clear if the contract is ongoing with no expiration date.</small>
+                            <span asp-validation-for="EndDateContract" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Add detailed terms, coverage details, or notes..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Form Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Details" asp-route-id="@Model.id" class="btn btn-sm btn-outline-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-sm btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

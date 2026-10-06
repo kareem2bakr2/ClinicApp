@@ -1,0 +1,330 @@
+﻿@{
+    ViewData["Title"] = "Receptionists";
+}
+@model List<ClinicApp.ViewModel.ReceptionistListViewModel>
+
+<div class="p-lg-5 my-5">
+
+    <partial name="_alerts" />
+    
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Receptionists</h2>
+            <p class="text-muted mb-0">Manage and view all registered receptionists</p>
+        </div>
+
+        <a asp-controller="Receptionist"
+           asp-action="Create"
+           class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Add Receptionist
+        </a>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text"
+                               id="receptionistSearch"
+                               name="receptionistSearch"
+                               class="form-control border-start-0"
+                               placeholder="Search receptionists by name, phone, or day off..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receptionist Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="receptionistsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Receptionist</th>
+                            <th>Phone</th>
+                            <th>Shift Start</th>
+                            <th>Shift End</th>
+                            <th>Day Off</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var receptionist in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">
+                                    @receptionist.ID
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(receptionist.PhotoURL))
+                                        {
+                                            <img src="@receptionist.PhotoURL"
+                                                 alt="@receptionist.Name"
+                                                 class="rounded-circle me-3 object-fit-cover"
+                                                 width="40"
+                                                 height="40" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center me-3 fw-bold"
+                                                 style="width: 40px; height: 40px; min-width: 40px;">
+                                                <i class="bi bi-person-fill fs-5"></i>
+                                            </div>
+                                        }
+                                        <span class="fw-semibold">@receptionist.Name</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @receptionist.Phone
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-clock me-1"></i>@receptionist.WorktimeFrom.ToString("hh:mm tt")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-clock-history me-1"></i>@receptionist.WorkTimeTO.ToString("hh:mm tt")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-info bg-opacity-10 text-white px-2 py-1">
+                                        @receptionist.Dayoff
+                                    </span>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="btn-group">
+                                        <a asp-controller="Receptionist"
+                                           asp-action="Details"
+                                           asp-route-id="@receptionist.ID"
+                                           class="btn btn-sm btn-outline-secondary"
+                                           title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-controller="Receptionist"
+                                           asp-action="Edit"
+                                           asp-route-id="@receptionist.ID"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Edit Profile">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Delete"
+                                                onclick="openDeleteModal('@receptionist.ID', '@receptionist.Name')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-person-badge fs-1 text-muted"></i>
+                <h5 class="mt-3">No receptionists found</h5>
+                <p class="text-muted">Start by adding your first receptionist staff member.</p>
+                <a asp-controller="Receptionist"
+                   asp-action="Create"
+                   class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add Receptionist
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger">
+                    <h5 class="modal-title fw-bold text-white" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4 text-center">
+                    <p class="fs-5 mb-1">Are you sure you want to delete this receptionist?</p>
+                    <p class="fw-bold text-danger fs-5" id="deleteReceptionistName"></p>
+                    <p class="text-muted small mb-0">This action cannot be undone.</p>
+                </div>
+
+                <div class="modal-footer bg-light justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <form asp-controller="Receptionist" asp-action="Delete" method="post" id="deleteReceptionistForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="deleteReceptionistId" name="id" value="" />
+                        <input type="hidden" id="deleteCurrentSearch" name="receptionistSearch" value="" />
+
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> Delete Receptionist
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global Delete Modal Opener
+        function openDeleteModal(receptionistId, receptionistName) {
+            const deleteIdEl = document.getElementById("deleteReceptionistId");
+            const deleteNameEl = document.getElementById("deleteReceptionistName");
+            const deleteModalEl = document.getElementById("deleteConfirmModal");
+
+            if (deleteIdEl) deleteIdEl.value = receptionistId;
+            if (deleteNameEl) deleteNameEl.textContent = receptionistName;
+
+            const currentSearchVal = document.getElementById("receptionistSearch")?.value || "";
+            const searchHidden = document.getElementById("deleteCurrentSearch");
+
+            if (searchHidden) searchHidden.value = currentSearchVal;
+
+            if (deleteModalEl) {
+                const deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalEl);
+                deleteModal.show();
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const searchInput = document.getElementById("receptionistSearch");
+            const table = document.getElementById("receptionistsTable");
+
+            if (!table) return;
+
+            const tableCard = table.closest(".card");
+            const itemsPerPage = 50;
+            let currentPage = 1;
+
+            // 1. Create and append pagination controls
+            const paginationContainer = document.createElement("div");
+            paginationContainer.className = "card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center";
+            paginationContainer.innerHTML = `
+                <div class="text-muted small" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+                <ul class="pagination pagination-sm mb-0" id="paginationList"></ul>
+            `;
+            if (tableCard) tableCard.appendChild(paginationContainer);
+
+            // 2. Define filter logic
+            window.filterReceptionists = function() {
+                const searchValue = searchInput ? searchInput.value.toLowerCase() : "";
+                const rows = Array.from(document.querySelectorAll("#receptionistsTable tbody tr"));
+
+                const filteredRows = rows.filter(row => {
+                    const rowText = row.innerText.toLowerCase();
+                    return rowText.includes(searchValue);
+                });
+
+                rows.forEach(row => row.style.display = "none");
+
+                const totalItems = filteredRows.length;
+                const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+                for (let i = startIndex; i < endIndex; i++) {
+                    if (filteredRows[i]) filteredRows[i].style.display = "";
+                }
+
+                const pageInfo = document.getElementById("pageInfo");
+                if (pageInfo) {
+                    pageInfo.textContent = totalItems > 0
+                        ? `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} entries`
+                        : "Showing 0 to 0 of 0 entries";
+                }
+
+                renderPaginationControls(totalPages);
+            };
+
+            // 3. Define pagination UI renderer
+            function renderPaginationControls(totalPages) {
+                const paginationList = document.getElementById("paginationList");
+                if (!paginationList) return;
+
+                paginationList.innerHTML = "";
+                if (totalPages <= 1) return;
+
+                const prevLi = document.createElement("li");
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `<a class="page-link" href="#">Previous</a>`;
+                prevLi.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                        currentPage--;
+                        window.filterReceptionists();
+                    }
+                });
+                paginationList.appendChild(prevLi);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement("li");
+                    li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    li.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        currentPage = i;
+                        window.filterReceptionists();
+                    });
+                    paginationList.appendChild(li);
+                }
+
+                const nextLi = document.createElement("li");
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `<a class="page-link" href="#">Next</a>`;
+                nextLi.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        window.filterReceptionists();
+                    }
+                });
+                paginationList.appendChild(nextLi);
+            }
+
+            // 4. Attach input listeners
+            if (searchInput) searchInput.addEventListener("input", () => { currentPage = 1; window.filterReceptionists(); });
+
+            // 5. Restore saved values from TempData
+            const initialSearch = @Json.Serialize(TempData["receptionistSearch"]);
+            if (searchInput && initialSearch) searchInput.value = initialSearch;
+
+            // 6. Initial filter pass
+            window.filterReceptionists();
+        });
+    </script>
+}

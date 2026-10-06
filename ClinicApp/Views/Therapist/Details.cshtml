@@ -1,0 +1,550 @@
+﻿@model TherapistDetialsViewModel
+
+@{
+    ViewData["Title"] = "Therapist Details - " + Model.Name;
+}
+
+<div class="container-fluid py-4 my-5">
+    <partial name="_alerts" />
+
+    <!-- Top Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Therapist Profile</h2>
+            <p class="text-muted mb-0">view of therapist schedules, sessions, and financial records.</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to List
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.ID" class="btn btn-primary">
+                <i class="bi bi-pencil-square me-1"></i> Edit Therapist
+            </a>
+        </div>
+    </div>
+
+    <!-- Section 1: Therapist Info Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center border-end">
+                    <img src="@(string.IsNullOrEmpty(Model.PhotoURL) ? "/img/Therapist/1.jpg" : Model.PhotoURL)"
+                         alt="@Model.Name"
+                         class="rounded-circle img-thumbnail mb-3 object-fit-cover"
+                         style="width: 130px; height: 130px;" />
+                    <h4 class="fw-bold mb-1">@Model.Name</h4>
+                    <span class="badge bg-primary bg-opacity-10 text-white border border-primary px-3 py-2 mb-2">
+                        @Model.Specialization
+                    </span>
+                </div>
+
+                <div class="col-md-9 ps-md-4">
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Email Address</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-envelope me-1 text-primary"></i>@Model.Email</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Phone Number</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-telephone me-1 text-primary"></i>@Model.Phone</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Gender</span>
+                            <span class="fw-semibold text-dark">@Model.Gender</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Seniority Level</span>
+                            <span class="badge bg-secondary">@Model.SeniorityLevel</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Hourly Rate</span>
+                            <span class="fw-bold text-success fs-5">$@Model.hourRate.ToString("0.00")/hr</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <span class="text-muted d-block small">Manager</span>
+                            <span class="fw-semibold text-dark">
+                                @(string.IsNullOrEmpty(Model.ManagerName) ? "None Assigned" : Model.ManagerName)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Filter Bar -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-1 text-md-end fw-bold text-secondary">
+                    <i class="bi bi-funnel me-1"></i>Filters:
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1 fw-semibold text-muted">Start Date</label>
+                    <input type="date" id="filterStartDate" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1 fw-semibold text-muted">End Date</label>
+                    <input type="date" id="filterEndDate" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1 fw-semibold text-muted">Payment Type</label>
+                    <select id="filterPaymentType" class="form-select form-select-sm">
+                        <option value="all">All Payments</option>
+                        <option value="credit">Credited Only</option>
+                        <option value="debit">Debited Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" id="btnClearFilters" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle me-1"></i> Reset Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs with Dynamic Counter Badges -->
+    <ul class="nav nav-tabs nav-fill mb-3" id="therapistTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments-pane" type="button" role="tab">
+                <i class="bi bi-calendar-event me-2"></i>Appointments (<span id="countAppointments">@Model.Appointments.Count</span>)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions-pane" type="button" role="tab">
+                <i class="bi bi-journal-medical me-2"></i>Therapy Sessions (<span id="countSessions">@Model.TherapySessions.Count</span>)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
+                <i class="bi bi-cash-stack me-2"></i>Payments (<span id="countPayments">@Model.Payments.Count</span>)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="therapistTabsContent">
+
+        <!-- Appointments Table -->
+        <div class="tab-pane fade show active" id="appointments-pane" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="appointmentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Status</th>
+                                <th>Patient Name</th>
+                                <th>Plan Name</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Appointments.Any())
+                            {
+                                @foreach (var item in Model.Appointments)
+                                {
+                                    <tr class="appointment-row"
+                                        style="cursor: pointer;"
+                                        data-date="@(item.StartDate?.ToString("yyyy-MM-dd"))"
+                                        data-id="@item.ID"
+                                        data-status="@item.Status"
+                                        data-patient="@item.patientName"
+                                        data-plan="@item.PlanName"
+                                        data-start="@(item.StartDate?.ToString("yyyy-MM-dd"))"
+                                        data-end="@(item.EndDate?.ToString("yyyy-MM-dd"))"
+                                        data-notes="@item.Notes">
+                                        <td><span class="badge bg-info text-dark">@item.Status</span></td>
+                                        <td class="fw-semibold">@(string.IsNullOrEmpty(item.patientName) ? "N/A" : item.patientName)</td>
+                                        <td>@(string.IsNullOrEmpty(item.PlanName) ? "N/A" : item.PlanName)</td>
+                                        <td>@(item.StartDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                        <td>@(item.EndDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye-fill me-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="no-data-row"><td colspan="6" class="text-center py-4 text-muted">No appointments recorded.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2" id="paginationAppointments"></div>
+            </div>
+        </div>
+
+        <!-- Therapy Sessions Table -->
+        <div class="tab-pane fade" id="sessions-pane" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="sessionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Session Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Treatment Plan</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.TherapySessions.Any())
+                            {
+                                @foreach (var item in Model.TherapySessions)
+                                {
+                                    <tr class="session-row"
+                                        style="cursor: pointer;"
+                                        data-date="@item.SessionDate.ToString("yyyy-MM-dd")"
+                                        data-id="@item.ID"
+                                        data-sessiondate="@item.SessionDate.ToString("MMM dd, yyyy")"
+                                        data-time="@item.StartTime - @item.EndTime"
+                                        data-status="@item.SessionStatus"
+                                        data-plan="@item.TreatmentPLanName"
+                                        data-notes="@item.Notes">
+                                        <td class="fw-semibold">@item.SessionDate.ToString("MMM dd, yyyy")</td>
+                                        <td>@item.StartTime - @item.EndTime</td>
+                                        <td><span class="badge bg-secondary">@item.SessionStatus</span></td>
+                                        <td>@(string.IsNullOrEmpty(item.TreatmentPLanName) ? "N/A" : item.TreatmentPLanName)</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye-fill me-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="no-data-row"><td colspan="5" class="text-center py-4 text-muted">No therapy sessions recorded.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2" id="paginationSessions"></div>
+            </div>
+        </div>
+
+        <!-- Payments Table -->
+        <div class="tab-pane fade" id="payments-pane" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="paymentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Payment Method</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Payments.Any())
+                            {
+                                @foreach (var item in Model.Payments)
+                                {
+                                    <tr class="payment-row"
+                                        data-date="@item.Date.ToString("yyyy-MM-dd")"
+                                        data-iscredit="@item.IsCredit.ToString().ToLower()">
+                                        <td class="fw-semibold">@item.Date.ToString("MMM dd, yyyy hh:mm tt")</td>
+                                        <td>
+                                            @if (item.IsCredit)
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-arrow-down-left me-1"></i> Credited</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger"><i class="bi bi-arrow-up-right me-1"></i> Debited</span>
+                                            }
+                                        </td>
+                                        <td>@item.Method</td>
+                                        <td>@(string.IsNullOrEmpty(item.Notes) ? "—" : item.Notes)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="no-data-row"><td colspan="4" class="text-center py-4 text-muted">No payment records found.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2" id="paginationPayments"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Appointment Details Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title text-white"><i class="bi bi-calendar-event me-2"></i>Appointment Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Appointment ID:</dt>
+                    <dd class="col-sm-8 fw-bold" id="modalApptId"></dd>
+                    <dt class="col-sm-4 text-muted">Patient Name:</dt>
+                    <dd class="col-sm-8" id="modalApptPatient"></dd>
+                    <dt class="col-sm-4 text-muted">Plan Name:</dt>
+                    <dd class="col-sm-8" id="modalApptPlan"></dd>
+                    <dt class="col-sm-4 text-muted">Status:</dt>
+                    <dd class="col-sm-8" id="modalApptStatus"></dd>
+                    <dt class="col-sm-4 text-muted">Start Time:</dt>
+                    <dd class="col-sm-8" id="modalApptStart"></dd>
+                    <dt class="col-sm-4 text-muted">End Time:</dt>
+                    <dd class="col-sm-8" id="modalApptEnd"></dd>
+                    <dt class="col-sm-4 text-muted">Notes:</dt>
+                    <dd class="col-sm-8" id="modalApptNotes"></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Details Modal -->
+<div class="modal fade" id="sessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title text-white"><i class="bi bi-journal-medical me-2"></i>Therapy Session Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Session ID:</dt>
+                    <dd class="col-sm-8 fw-bold" id="modalSessId"></dd>
+                    <dt class="col-sm-4 text-muted">Session Date:</dt>
+                    <dd class="col-sm-8" id="modalSessDate"></dd>
+                    <dt class="col-sm-4 text-muted">Timing:</dt>
+                    <dd class="col-sm-8" id="modalSessTime"></dd>
+                    <dt class="col-sm-4 text-muted">Status:</dt>
+                    <dd class="col-sm-8" id="modalSessStatus"></dd>
+                    <dt class="col-sm-4 text-muted">Treatment Plan:</dt>
+                    <dd class="col-sm-8" id="modalSessPlan"></dd>
+                    <dt class="col-sm-4 text-muted">Notes:</dt>
+                    <dd class="col-sm-8" id="modalSessNotes"></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const pageSize = 50;
+            const startDateInput = document.getElementById("filterStartDate");
+            const endDateInput = document.getElementById("filterEndDate");
+            const paymentTypeSelect = document.getElementById("filterPaymentType");
+            const btnClearFilters = document.getElementById("btnClearFilters");
+
+            const state = {
+                appointments: { currentPage: 1, filteredRows: [] },
+                sessions: { currentPage: 1, filteredRows: [] },
+                payments: { currentPage: 1, filteredRows: [] }
+            };
+
+            const apptModalElement = document.getElementById("appointmentModal");
+            const sessModalElement = document.getElementById("sessionModal");
+            const apptModal = apptModalElement ? new bootstrap.Modal(apptModalElement) : null;
+            const sessModal = sessModalElement ? new bootstrap.Modal(sessModalElement) : null;
+
+            // Helper for Date Filtering
+            function isWithinDateRange(rowDateStr, startDate, endDate) {
+                if (!rowDateStr) return true;
+                const rowDate = new Date(rowDateStr);
+                if (startDate && rowDate < startDate) return false;
+                if (endDate && rowDate > endDate) return false;
+                return true;
+            }
+
+            // Master Filter
+            function applyFilters() {
+                const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
+                const paymentType = paymentTypeSelect ? paymentTypeSelect.value : "all";
+
+                // 1. Filter Appointments
+                state.appointments.filteredRows = [];
+                document.querySelectorAll(".appointment-row").forEach(row => {
+                    const matchesDate = isWithinDateRange(row.getAttribute("data-date"), startDate, endDate);
+                    if (matchesDate) state.appointments.filteredRows.push(row);
+                    row.style.display = "none";
+                });
+
+                // 2. Filter Therapy Sessions
+                state.sessions.filteredRows = [];
+                document.querySelectorAll(".session-row").forEach(row => {
+                    const matchesDate = isWithinDateRange(row.getAttribute("data-date"), startDate, endDate);
+                    if (matchesDate) state.sessions.filteredRows.push(row);
+                    row.style.display = "none";
+                });
+
+                // 3. Filter Payments (Independent evaluation)
+                state.payments.filteredRows = [];
+                document.querySelectorAll(".payment-row").forEach(row => {
+                    const matchesDate = isWithinDateRange(row.getAttribute("data-date"), startDate, endDate);
+                    const isCredit = row.getAttribute("data-iscredit") === "true";
+
+                    // Evaluates regardless of whether start/end dates are populated
+                    let matchesPaymentType = true;
+                    if (paymentType === "credit") matchesPaymentType = isCredit;
+                    if (paymentType === "debit") matchesPaymentType = !isCredit;
+
+                    if (matchesDate && matchesPaymentType) state.payments.filteredRows.push(row);
+                    row.style.display = "none";
+                });
+
+                // Update Counter Badges Dynamically
+                const countApptsEl = document.getElementById("countAppointments");
+                const countSessEl = document.getElementById("countSessions");
+                const countPayEl = document.getElementById("countPayments");
+
+                if (countApptsEl) countApptsEl.textContent = state.appointments.filteredRows.length;
+                if (countSessEl) countSessEl.textContent = state.sessions.filteredRows.length;
+                if (countPayEl) countPayEl.textContent = state.payments.filteredRows.length;
+
+                // Reset Pagination to Page 1
+                state.appointments.currentPage = 1;
+                state.sessions.currentPage = 1;
+                state.payments.currentPage = 1;
+
+                renderTable("appointments", "paginationAppointments");
+                renderTable("sessions", "paginationSessions");
+                renderTable("payments", "paginationPayments");
+            }
+
+            // Client-Side Pagination Renderer
+            function renderTable(typeKey, paginationContainerId) {
+                const tableState = state[typeKey];
+                const totalItems = tableState.filteredRows.length;
+                const totalPages = Math.ceil(totalItems / pageSize) || 1;
+                const container = document.getElementById(paginationContainerId);
+
+                if (!container) return;
+
+                if (tableState.currentPage > totalPages) tableState.currentPage = totalPages;
+
+                // Hide all filtered rows, then reveal current page slice
+                tableState.filteredRows.forEach(row => row.style.display = "none");
+
+                const startIdx = (tableState.currentPage - 1) * pageSize;
+                const endIdx = Math.min(startIdx + pageSize, totalItems);
+
+                for (let i = startIdx; i < endIdx; i++) {
+                    tableState.filteredRows[i].style.display = "";
+                }
+
+                // Render Pagination Controls
+                if (totalItems === 0) {
+                    container.innerHTML = `<small class="text-muted">Showing 0 entries</small>`;
+                    return;
+                }
+
+                let paginationHtml = `
+                            <small class="text-muted">Showing ${startIdx + 1} to ${endIdx} of ${totalItems} entries</small>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item ${tableState.currentPage === 1 ? 'disabled' : ''}">
+                                    <button class="page-link" data-type="${typeKey}" data-page="${tableState.currentPage - 1}">Previous</button>
+                                </li>`;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationHtml += `
+                                <li class="page-item ${i === tableState.currentPage ? 'active' : ''}">
+                                    <button class="page-link" data-type="${typeKey}" data-page="${i}">${i}</button>
+                                </li>`;
+                }
+
+                paginationHtml += `
+                                <li class="page-item ${tableState.currentPage === totalPages ? 'disabled' : ''}">
+                                    <button class="page-link" data-type="${typeKey}" data-page="${tableState.currentPage + 1}">Next</button>
+                                </li>
+                            </ul>`;
+
+                container.innerHTML = paginationHtml;
+
+                // Pagination Click Listeners
+                container.querySelectorAll(".page-link").forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        const newPage = parseInt(this.getAttribute("data-page"));
+                        if (newPage >= 1 && newPage <= totalPages) {
+                            state[typeKey].currentPage = newPage;
+                            renderTable(typeKey, paginationContainerId);
+                        }
+                    });
+                });
+            }
+
+            // Event Listeners for Date and Payment Inputs
+            if (startDateInput) {
+                startDateInput.addEventListener("change", applyFilters);
+                if (window.jQuery) {
+                    $(startDateInput).on("change", applyFilters);
+                }
+            }
+
+            if (endDateInput) {
+                endDateInput.addEventListener("change", applyFilters);
+                if (window.jQuery) {
+                    $(endDateInput).on("change", applyFilters);
+                }
+            }
+
+            if (paymentTypeSelect) {
+                paymentTypeSelect.addEventListener("change", applyFilters);
+                if (window.jQuery) {
+                    $(paymentTypeSelect).on("change", applyFilters);
+                }
+            }
+
+            if (btnClearFilters) {
+                btnClearFilters.addEventListener("click", function() {
+                    if (startDateInput) startDateInput.value = "";
+                    if (endDateInput) endDateInput.value = "";
+                    if (paymentTypeSelect) paymentTypeSelect.value = "all";
+                    applyFilters();
+                });
+            }
+
+            // Modal Trigger Listeners
+            document.querySelectorAll(".appointment-row").forEach(row => {
+                row.addEventListener("click", function() {
+                    if (!apptModal) return;
+                    document.getElementById("modalApptId").textContent = this.getAttribute("data-id") || "N/A";
+                    document.getElementById("modalApptPatient").textContent = this.getAttribute("data-patient") || "N/A";
+                    document.getElementById("modalApptPlan").textContent = this.getAttribute("data-plan") || "N/A";
+                    document.getElementById("modalApptStatus").textContent = this.getAttribute("data-status") || "N/A";
+                    document.getElementById("modalApptStart").textContent = this.getAttribute("data-start") || "N/A";
+                    document.getElementById("modalApptEnd").textContent = this.getAttribute("data-end") || "N/A";
+                    document.getElementById("modalApptNotes").textContent = this.getAttribute("data-notes") || "No notes available";
+                    apptModal.show();
+                });
+            });
+
+            document.querySelectorAll(".session-row").forEach(row => {
+                row.addEventListener("click", function() {
+                    if (!sessModal) return;
+                    document.getElementById("modalSessId").textContent = this.getAttribute("data-id") || "N/A";
+                    document.getElementById("modalSessDate").textContent = this.getAttribute("data-sessiondate") || "N/A";
+                    document.getElementById("modalSessTime").textContent = this.getAttribute("data-time") || "N/A";
+                    document.getElementById("modalSessStatus").textContent = this.getAttribute("data-status") || "N/A";
+                    document.getElementById("modalSessPlan").textContent = this.getAttribute("data-plan") || "N/A";
+                    document.getElementById("modalSessNotes").textContent = this.getAttribute("data-notes") || "No notes available";
+                    sessModal.show();
+                });
+            });
+
+            // Initialize Page
+            applyFilters();
+        });
+    </script>
+}

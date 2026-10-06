@@ -1,0 +1,131 @@
+﻿@model ReceptionistCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Receptionist Profile";
+}
+
+<div class="container py-5 my-5 ">
+    <div class="card shadow-sm border-0">
+        <partial name="_alerts"/>
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="card-title mb-0 fw-bold">
+                <i class="bi bi-person-plus me-2"></i>Create New Receptionist
+            </h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Section 1: Personal & Contact Information -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-person me-2"></i>Personal Information</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="FirstName" class="form-label fw-semibold"></label>
+                        <input asp-for="FirstName" class="form-control" placeholder="First Name" />
+                        <span asp-validation-for="FirstName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="LastName" class="form-label fw-semibold"></label>
+                        <input asp-for="LastName" class="form-control" placeholder="Last Name" />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="UserName" class="form-label fw-semibold"></label>
+                        <input asp-for="UserName" class="form-control" placeholder="Username" />
+                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Phone" class="form-label fw-semibold"></label>
+                        <input asp-for="Phone" class="form-control" placeholder="01012282233" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="BOD" class="form-label fw-semibold">Birth Date</label>
+                        <input asp-for="BOD" type="date" class="form-control" />
+                        <span asp-validation-for="BOD" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Gender" class="form-label fw-semibold"></label>
+                        <select asp-for="Gender" asp-items="Html.GetEnumSelectList<Gender>()" class="form-select">
+                            <option value="">-- Select Gender --</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Profile Photo File Input -->
+                    <div class="col-md-12">
+                        <label asp-for="Photo" class="form-label fw-semibold">Profile Photo</label>
+                        <input asp-for="Photo" type="file" class="form-control" accept="image/*" />
+                        <small class="form-text text-muted">Allowed formats: .png, .jpg, .jpeg (Max size: 5 MB)</small>
+                        <span asp-validation-for="Photo" class="text-danger small d-block"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Section 2: Shift & Work Schedule Details -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-2"></i>Work Schedule</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="WorktimeFrom" class="form-label fw-semibold">Shift Start Time</label>
+                        <input asp-for="WorktimeFrom" type="time" class="form-control" />
+                        <span asp-validation-for="WorktimeFrom" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="WorkTimeTO" class="form-label fw-semibold">Shift End Time</label>
+                        <input asp-for="WorkTimeTO" type="time" class="form-control" />
+                        <span asp-validation-for="WorkTimeTO" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Dayoff" class="form-label fw-semibold">Day Off</label>
+                        <select asp-for="Dayoff" asp-items="Html.GetEnumSelectList<DayOfWeek>()" class="form-select">
+                            <option value="">-- Select Day Off --</option>
+                        </select>
+                        <span asp-validation-for="Dayoff" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Section 3: Credentials -->
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-lock me-2"></i>Account Security</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Password" class="form-label fw-semibold"></label>
+                        <input asp-for="Password" class="form-control" placeholder="Enter password" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" placeholder="Re-enter password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-action="Index" asp-controller="Receptionist" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-circle me-1"></i>Create Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
