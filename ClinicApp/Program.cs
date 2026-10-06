@@ -117,10 +117,12 @@ namespace ClinicApp
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+                
                 try
                 {
                     var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
                     var UserManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+   
                     await SeedRolesAsync(roleManager , UserManager);
                 }
                 catch (Exception ex)

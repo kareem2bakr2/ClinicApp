@@ -2,7 +2,7 @@
 {
     public interface ITherapistService
     {
-        Task<List<TherapistListViewModel>> GetMyStaffTherapistsAsync(int managerid);
+        Task<List<TherapistListViewModel>> GetMyStaffTherapistsAsync(int? managerid);
         Task<List<TherapistAddToMyTeamModelView>> GetTherapistWithNoMGR(int id);
 
         Task ChangeTherapistTeam(int [] TherapistsIdToTransfer , string managerAppID);

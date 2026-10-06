@@ -26,31 +26,23 @@ namespace ClinicApp.Controllers
             _currentUserService = currentUser;
         }
 
-        [Authorize(Roles = ApplicationRole.Admin)]
+
+        [Authorize(Roles = ApplicationRole.AdminTherapist)]
         public async Task<IActionResult> Index()
         {
-            // 1. Fetch the mock manager user from DB
-            var managerUser = await _userManager.FindByEmailAsync("manager@clinic.com");
+            var user =  await _userManager.FindByIdAsync(_currentUserService.CurrentUserID);
+            if (user == null) return NotFound();
 
-            if (managerUser != null)
-            {
-                string managerId = managerUser.Id; // e.g., "a8b34c12-..." or 5
-
-                await _signInManager.SignInAsync(managerUser, isPersistent: false);
-                
-                ViewBag.ManagerAppId = managerId;
-                ViewBag.ManagerDBId = managerUser.Therapist?.ID;
-                List<TherapistListViewModel> therapistListViewModel 
-                    = await  therapistService.GetMyStaffTherapistsAsync(managerUser.Therapist.ID);
-                
-                return View("Index" , therapistListViewModel);
-            }
-
-            return NotFound();
+            List<TherapistListViewModel> therapistListViewModel 
+                = await  therapistService.GetMyStaffTherapistsAsync(user.Therapist?.ID) ?? new List<TherapistListViewModel>();
+            
+            return View("Index" , therapistListViewModel);
         }
 
+         
+
         [HttpGet]
-        [Authorize(Roles = ApplicationRole.Admin)]
+        [Authorize(Roles = ApplicationRole.Therapist)]
         public async Task<IActionResult> ADDToTeam() {
             var managerUser = await _userManager.FindByEmailAsync("manager@clinic.com");
 
@@ -72,9 +64,9 @@ namespace ClinicApp.Controllers
             //return View("ADDToTeam", therarpists);
         }
 
-        //[ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]
         [HttpPost]
-        [Authorize(Roles = ApplicationRole.Admin)]
+        [Authorize(Roles = ApplicationRole.Therapist)]
         public async Task<IActionResult> ADDToTeam(int[] ids) {
 
             var managerid = _currentUserService.CurrentUserID;
@@ -95,9 +87,9 @@ namespace ClinicApp.Controllers
 
         }
 
-        //[ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]
         [HttpPost]
-        [Authorize(Roles = ApplicationRole.Admin)]
+        [Authorize(Roles = ApplicationRole.Therapist)]
         public async Task<IActionResult> RemoveFromTeam(int id, int managerid)
         {
             await therapistService.removeFromTeamAsync(id, managerid);

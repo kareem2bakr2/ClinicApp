@@ -9,23 +9,35 @@ namespace ClinicApp.Service
         private readonly ITherapistRepository TherapistRepo;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly ICurrentUserService _currentUserService;
 
         public TherapistService(
             ITherapistRepository TherapistRepo,
             UserManager<ApplicationUser> _userManager,
-            IWebHostEnvironment webHostEnvironment
+            IWebHostEnvironment webHostEnvironment,
+            ICurrentUserService currentUserService
             ) 
         {
+            _currentUserService = currentUserService;
             this._userManager = _userManager;
             this.TherapistRepo = TherapistRepo;
             this.webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task<List<TherapistListViewModel>> GetMyStaffTherapistsAsync(int managerid)
+        public async Task<List<TherapistListViewModel>> GetMyStaffTherapistsAsync(int? managerid)
         {
-            var therapists = await TherapistRepo.GetMyStaffTherapistsAsync(managerid);
+            var therapists = TherapistRepo.GetAll();
+           
+            var user = await _userManager.FindByIdAsync(_currentUserService.CurrentUserID);
+            
+            if (!await _userManager.IsInRoleAsync(user, ApplicationRole.Admin))
+            {
+                therapists = therapists.Where(e => e.ManagerID == managerid);
+            }
+            
+
             var therapistsViewModel = new List<TherapistListViewModel>() ;
-            foreach (var therapist in therapists) {
+            foreach (var therapist in therapists.ToList()) {
 
                 therapistsViewModel.Add(new TherapistListViewModel() { 
                     ID = therapist.ID,
