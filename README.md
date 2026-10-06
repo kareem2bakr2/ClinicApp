@@ -69,12 +69,20 @@ The solution uses ASP.NET Core Identity (see `Areas/Identity`). Default Identity
 - For single-column updates (e.g., soft-delete flag) consider EF Core `ExecuteUpdateAsync` (EF Core 7+) or attach-stub pattern to avoid an extra SELECT.
 - Keep `SaveChangesAsync()` calls grouped where possible to minimize transactions and database round-trips.
 
-## Tests and Benchmarks
-There are no automated unit tests or Benchmark.NET benchmarks included in the repository by default. Add tests under a separate test project and use `dotnet test` to run them.
+## 🌐 Live Demo
+
+Check out the live application here:  
+👉 **[http://medicomyclinic.runasp.net/](http://medicomyclinic.runasp.net/)**
+
+### 🔑 Test Demo Credentials
+Admin 
+Email : Admin@clinic.com
+password : kareem12345
 
 ## Contributing
 - Fork the repository and use feature branches. Submit pull requests with clear descriptions and, where appropriate, include database migration scripts for schema changes.
 
 ## License
 Specify a license for the project here (e.g., MIT) or add a `LICENSE` file to the repository.
+
 
